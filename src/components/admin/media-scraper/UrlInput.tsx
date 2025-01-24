@@ -19,7 +19,7 @@ export function UrlInput({ onSubmit, disabled }: UrlInputProps) {
       new URL(url)
       onSubmit(url)
       setUrl('') // Clear the input after successful submission
-    } catch (_e) {
+    } catch {
       alert('Please enter a valid URL')
     }
   }

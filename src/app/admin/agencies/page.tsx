@@ -144,7 +144,7 @@ export default function AgenciesPage() {
 
   useEffect(() => {
     loadAgencies()
-  }, [loadAgencies])
+  }, [])
 
   const handleDeleteAgency = async (agency: Agency) => {
     try {
@@ -249,19 +249,13 @@ export default function AgenciesPage() {
                     <h3 className="text-lg font-medium">{agency.name}</h3>
                     <div className="h-8 w-auto">
                       {/* Replace img tags with Next.js Image component */}
-                      {agency.branding?.logo?.dark && (
-                        <Image 
-                          src={agency.branding.logo.dark}
-                          alt={`${agency.name} logo`}
-                          width={32}
-                          height={32}
-                          className="h-full w-auto object-contain"
-                          onError={(e) => {
-                            console.log('Logo load error for', agency.name, ':', e);
-                            e.currentTarget.src = '/placeholder-logo.png';
-                          }}
-                        />
-                      )}
+                      <Image 
+                        src={agency.branding?.logo?.dark || '/placeholder-logo.png'}
+                        alt={`${agency.name} logo`}
+                        width={32}
+                        height={32}
+                        className="h-full w-auto object-contain"
+                      />
                       {!agency.branding?.logo?.dark && (
                         <Image 
                           src="/placeholder-logo.png"

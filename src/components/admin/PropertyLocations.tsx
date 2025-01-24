@@ -237,7 +237,7 @@ export function PropertyLocations({ propertyId, onSave }: PropertyLocationsProps
     }));
 
     showToast(`Added ${landmark.name} to landmarks`, 'success');
-  }, [state.selectedType]);
+  }, [state.selectedType, showToast]);
 
   // Helper function to format type string nicely
   function formatTypeString(type: string): string {
@@ -376,4 +376,4 @@ export function PropertyLocations({ propertyId, onSave }: PropertyLocationsProps
       </div>
     </div>
   );
-} 
+}

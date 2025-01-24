@@ -1,4 +1,3 @@
-import type { BrandAsset } from '@/types/brand'
 import { BrandAssets } from '@/types/brand'
 
 export async function scrapeBrandFromUrl(url: string): Promise<BrandAssets> {

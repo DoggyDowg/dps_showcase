@@ -14,8 +14,8 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
       const colors = property.agency_settings.branding.colors
       console.log('Setting brand colors:', colors)
       updateBrandColors({
-        dark: colors.dark || colors.text,
-        light: colors.light || colors.background,
+        dark: colors.text || colors.primary,
+        light: colors.background || colors.secondary,
         highlight: colors.accent
       })
     }
