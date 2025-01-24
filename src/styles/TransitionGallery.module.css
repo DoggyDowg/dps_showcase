@@ -1,0 +1,11 @@
+.imageContainer {
+  position: relative;
+  height: 16rem;
+  transform: scale(1);
+  transition: all 0.3s ease-out;
+}
+
+.imageContainer:hover {
+  transform: scale(1.05);
+  z-index: 10;
+} 

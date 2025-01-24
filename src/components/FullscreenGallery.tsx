@@ -1,0 +1,135 @@
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import paginationStyles from '@/styles/Pagination.module.css'
+
+interface FullscreenGalleryProps {
+  images: Array<{ src: string; alt: string }>
+  initialIndex: number
+  onClose: () => void
+}
+
+export function FullscreenGallery({ images, initialIndex, onClose }: FullscreenGalleryProps) {
+  const [currentSlide, setCurrentSlide] = useState(initialIndex)
+  const [transitionClass, setTransitionClass] = useState<'transitionPrev' | 'transitionNext' | ''>('')
+
+  // Handle escape key to close
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [onClose])
+
+  const handleSlideTransition = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'prev' 
+      ? currentSlide === 0 ? images.length - 1 : currentSlide - 1
+      : (currentSlide + 1) % images.length
+
+    setCurrentSlide(newIndex)
+  }
+
+  const handlePagination = (direction: 'prev' | 'next') => {
+    setTransitionClass(direction === 'prev' ? 'transitionPrev' : 'transitionNext')
+    setTimeout(() => {
+      setTransitionClass('')
+    }, 500)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center">
+      {/* Blurred background */}
+      <div 
+        className="absolute inset-0 bg-brand-dark/75 backdrop-blur-xl"
+        style={{
+          backgroundImage: `url(${images[currentSlide].src})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(20px) brightness(0.4)',
+        }}
+      />
+
+      {/* Close button */}
+      <button
+        className="absolute top-4 right-4 text-brand-light p-2 hover:bg-brand-light/10 rounded-full transition-colors z-10"
+        onClick={onClose}
+      >
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      {/* Main content */}
+      <div className="relative w-full h-[80vh] max-w-7xl px-4 pb-8">
+        <div className={paginationStyles.sliderContainer}>
+          <div 
+            className={paginationStyles.slideTrack}
+            style={{ 
+              transform: `translateX(-${currentSlide * 100}%)` 
+            }}
+          >
+            {images.map((image, index) => (
+              <div key={index} className={paginationStyles.slide}>
+                <Image
+                  src={image.src}
+                  alt={image.alt}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Image Counter */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-brand-light bg-brand-dark/50 px-4 py-1 rounded-full text-sm backdrop-blur-sm z-[60]">
+          {currentSlide + 1} / {images.length}
+        </div>
+
+        {/* Custom Pagination */}
+        <div className={`${paginationStyles.paginationWrapper} ${transitionClass ? paginationStyles[transitionClass] : ''} pb-5`}>
+          {/* Prev Button */}
+          <svg 
+            className={paginationStyles.btn} 
+            height="48" 
+            viewBox="0 0 24 24" 
+            width="48" 
+            xmlns="http://www.w3.org/2000/svg"
+            onClick={() => {
+              handleSlideTransition('prev')
+              handlePagination('prev')
+            }}
+          >
+            <path d="M15.41 16.09l-4.58-4.59 4.58-4.59L14 5.5l-6 6 6 6z"/>
+          </svg>
+
+          <div className={paginationStyles.paginationContainer}>
+            <div className={`${paginationStyles.littleDot} ${paginationStyles.littleDotFirst}`} />
+            <div className={paginationStyles.littleDot}>
+              <div className={paginationStyles.bigDotContainer}>
+                <div className={paginationStyles.bigDot} />
+              </div>
+            </div>
+            <div className={`${paginationStyles.littleDot} ${paginationStyles.littleDotLast}`} />
+          </div>
+
+          {/* Next Button */}
+          <svg 
+            className={paginationStyles.btn} 
+            height="48" 
+            viewBox="0 0 24 24" 
+            width="48" 
+            xmlns="http://www.w3.org/2000/svg"
+            onClick={() => {
+              handleSlideTransition('next')
+              handlePagination('next')
+            }}
+          >
+            <path d="M8.59 16.34l4.58-4.59-4.58-4.59L10 5.75l6 6-6 6z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  )
+} 

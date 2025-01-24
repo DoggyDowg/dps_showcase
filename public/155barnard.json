@@ -1,0 +1,64 @@
+{
+    "hero": {
+      "headline": "Luxury Living Awaits!",
+      "subheadline": "Experience opulence in North Adelaide's finest home"
+    },
+    "features": {
+      "headline": "Unmatched Features for Modern Living",
+      "description": "This extraordinary family home redefines luxury with its exquisite design and extensive features. From the elegant entrance hall adorned with chandeliers to the monumental open plan living space, every inch of this residence exudes sophistication. The gourmet kitchen is a chef's dream, while the resort-style alfresco area, complete with a heated pool and tennis court, is perfect for entertaining. With four lavish bedrooms, including a sumptuous master suite, this home is the epitome of comfort and style.",
+      "items": [
+        { "feature": "4 Bedrooms 🛏️" },
+        { "feature": "4 Bathrooms 🚽" },
+        { "feature": "3 Car Spaces 🚗" },
+        { "feature": "Heated Pool 🌊" },
+        { "feature": "Tennis Court 🎾" },
+        { "feature": "Gourmet Kitchen 🍽️" },
+        { "feature": "Alfresco Pavilion 🏖️" },
+        { "feature": "Lift Access 🚀" },
+        { "feature": "Ducted Air Conditioning ❄️" },
+        { "feature": "Security System 🔒" },
+        { "feature": "Extensive Storage 📦" },
+        { "feature": "Outdoor Kitchen 🍔" },
+        { "feature": "Automated Blinds 🪟" },
+        { "feature": "Marble Finishes 🏛️" },
+        { "feature": "Designer Fixtures 💎" }
+      ]
+    },
+    "lifestyle": {
+      "header": "A Lifestyle of Luxury and Convenience",
+      "headline": "Indulge in Resort-Style Living",
+      "description": "Step into a world of luxury where every day feels like a holiday. This magnificent home offers a lifestyle that seamlessly blends comfort and sophistication. Enjoy sun-soaked afternoons by the heated pool, host grand parties in the expansive resort-style alfresco area, or challenge friends to matches on the synthetic tennis court. With spacious open-plan living, elegant formal rooms, and a state-of-the-art gourmet kitchen, every gathering becomes a celebration. The proximity to Adelaide's vibrant CBD, parklands, and esteemed schools means you can enjoy both relaxation and convenience in this exclusive enclave."
+    },
+    "neighbourhood": {
+      "part1_headline": "Vibrant Shopping & Dining",
+      "part1_text": "Experience the bustling atmosphere of O’Connell Street, lined with an array of boutique shops, cafes, and restaurants, perfect for leisurely weekends or quick bites after a busy day.",
+      "part2_headline": "Recreational Paradise",
+      "part2_text": "Enjoy the scenic beauty of the River Torrens precinct, ideal for walking, jogging, or cycling, along with the North Adelaide Golf Course, catering to golf enthusiasts of all skill levels.",
+      "part3_headline": "Prestigious Education Options",
+      "part3_text": "This prime location is surrounded by top-tier educational institutions, including North Adelaide Primary, Adelaide Botanic, and Adelaide High School, ensuring excellent schooling for your children."
+    },
+    "seo": {
+      "title": "Luxury Family Home in North Adelaide",
+      "description": "Discover unparalleled luxury and comfort in this stunning North Adelaide residence with modern amenities and a prime location."
+    },
+    "og": {
+      "title": "Exclusive North Adelaide Living",
+      "description": "Embrace the ultimate in luxury living in this magnificent family home, featuring exceptional design, resort-style amenities, and a premier location."
+    },
+    "more_info": {
+      "additionalInfo": [
+        {
+          "info": "",
+          "detail": ""
+        },
+        {
+          "info": "",
+          "detail": ""
+        },
+        {
+          "info": "",
+          "detail": ""
+        }
+      ]
+    }
+  }
