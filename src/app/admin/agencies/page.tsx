@@ -6,7 +6,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import type { Agency } from '@/types/agency'
-import { getImageUrlWithHash } from '@/utils/imageUtils'
 
 function DeleteDialog({ 
   isOpen, 
@@ -64,76 +63,13 @@ export default function AgenciesPage() {
       setLoading(true)
       setError(null)
 
-      // First get the agencies
-      const { data: agencyData, error: agencyError } = await supabase
+      const { data, error } = await supabase
         .from('agency_settings')
         .select('*')
-        .order('name')
+        .order('name', { ascending: true })
 
-      if (agencyError) throw agencyError
-
-      // Get all properties with their agency IDs
-      const { data: properties, error: propertyError } = await supabase
-        .from('properties')
-        .select('agency_id')
-
-      if (propertyError) throw propertyError
-
-      // Get all agents with their agency IDs
-      const { data: agents, error: agentError } = await supabase
-        .from('agents')
-        .select('agency_id')
-
-      if (agentError) throw agentError
-
-      // Count manually
-      const propertyCountMap: Record<string, number> = {}
-      const agentCountMap: Record<string, number> = {}
-
-      properties?.forEach(prop => {
-        if (prop.agency_id) {
-          propertyCountMap[prop.agency_id] = (propertyCountMap[prop.agency_id] || 0) + 1
-        }
-      })
-
-      agents?.forEach(agent => {
-        if (agent.agency_id) {
-          agentCountMap[agent.agency_id] = (agentCountMap[agent.agency_id] || 0) + 1
-        }
-      })
-
-      // Process agencies and add content-based cache busting
-      const agenciesWithCacheBusting = await Promise.all(agencyData?.map(async agency => {
-        const enrichedAgency: AgencyWithCounts = {
-          ...agency,
-          propertyCount: propertyCountMap[agency.id] || 0,
-          agentCount: agentCountMap[agency.id] || 0
-        };
-
-        if (agency.branding?.logo) {
-          const processedLogo = {
-            dark: agency.branding.logo.dark ? await getImageUrlWithHash(agency.branding.logo.dark) : '',
-            light: agency.branding.logo.light ? await getImageUrlWithHash(agency.branding.logo.light) : ''
-          };
-
-          return {
-            ...enrichedAgency,
-            branding: {
-              ...agency.branding,
-              logo: processedLogo
-            }
-          };
-        }
-        return enrichedAgency;
-      }) || []);
-
-      console.log('Loaded agencies:', agenciesWithCacheBusting)
-      // Log each agency's logo URL
-      agenciesWithCacheBusting?.forEach(agency => {
-        console.log(`${agency.name} logo URL:`, agency.branding?.logo?.dark)
-      })
-
-      setAgencies(agenciesWithCacheBusting)
+      if (error) throw error
+      setAgencies(data || [])
     } catch (err) {
       console.error('Error loading agencies:', err)
       setError(err instanceof Error ? err : new Error('Failed to load agencies'))
@@ -144,7 +80,7 @@ export default function AgenciesPage() {
 
   useEffect(() => {
     loadAgencies()
-  }, [])
+  }, [loadAgencies])
 
   const handleDeleteAgency = async (agency: Agency) => {
     try {

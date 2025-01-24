@@ -43,7 +43,7 @@ export default function AgentsPage() {
 
   useEffect(() => {
     loadAgents()
-  }, [])
+  }, [loadAgents])
 
   const handleDeleteAgent = async (agentId: string) => {
     try {

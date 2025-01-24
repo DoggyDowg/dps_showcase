@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
 interface MediaGridAsset {
   id: string;
@@ -73,13 +74,15 @@ export function MediaGrid({ assets, onAssetSelect }: MediaGridProps) {
                   </svg>
                 </div>
               ) : (
-                <img
-                  src={asset.url}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  onError={() => handleImageError(asset.id)}
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={asset.url}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    onError={() => handleImageError(asset.id)}
+                  />
+                </div>
               )}
             </div>
           )}
@@ -99,15 +102,8 @@ export function MediaGrid({ assets, onAssetSelect }: MediaGridProps) {
               {asset.category}
             </div>
           )}
-
-          {/* Hover Info */}
-          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="text-white text-sm text-center p-2">
-              {asset.type === 'video' ? 'Click to preview video' : 'Click to select image'}
-            </div>
-          </div>
         </div>
       ))}
     </div>
   )
-} 
+}

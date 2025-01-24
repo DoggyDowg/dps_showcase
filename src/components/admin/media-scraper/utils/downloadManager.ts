@@ -1,11 +1,5 @@
 import { MediaAsset } from '../MediaScraperModal'
 
-interface DownloadProgress {
-  totalBytes: number
-  downloadedBytes: number
-  percentage: number
-}
-
 export async function downloadAssets(
   assets: MediaAsset[],
   onProgress: (progress: number) => void
@@ -81,4 +75,4 @@ export async function downloadAssets(
     console.error('Error downloading assets:', error)
     throw error
   }
-} 
+}

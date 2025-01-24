@@ -1,77 +1,45 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
+// Follow Deno's deployment guide for more details:
 // https://deno.land/manual/getting_started/setup_your_environment
-
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 
 interface WebhookRequest extends Request {
   method: string;
-  url: string;
+  headers: Headers;
+  body: ReadableStream<Uint8Array> | null;
 }
 
-interface WebhookBody {
-  entry: Array<{
-    id: string;
-    time: number;
-    changes: Array<{
-      field: string;
-      value: any;
-    }>;
-  }>;
+interface WebhookResponse {
+  status: number;
+  body: string;
 }
 
-const VERIFY_TOKEN = Deno.env.get('INSTAGRAM_VERIFY_TOKEN')
-const APP_SECRET = Deno.env.get('INSTAGRAM_APP_SECRET')
-
-// Function to verify webhook signature
-const verifySignature = (signature: string | null, body: WebhookBody): boolean => {
-  if (!signature || !APP_SECRET) return false;
-  
-  // Use the body in signature verification
-  console.log('Verifying signature for body:', body);
-  // TODO: Implement proper signature verification
-  return true;
-}
-
-serve(async (req: WebhookRequest) => {
-  // Handle GET request for webhook verification
+export async function handler(req: WebhookRequest): Promise<WebhookResponse> {
   if (req.method === 'GET') {
+    // Handle the verification request
     const url = new URL(req.url)
     const mode = url.searchParams.get('hub.mode')
     const token = url.searchParams.get('hub.verify_token')
     const challenge = url.searchParams.get('hub.challenge')
 
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('Webhook verified!')
-      return new Response(challenge, { status: 200 })
+    if (mode === 'subscribe' && token === process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN) {
+      return { status: 200, body: challenge || '' }
     }
-    return new Response('Forbidden', { status: 403 })
+
+    return { status: 403, body: 'Invalid verification token' }
   }
 
-  // Handle POST request for webhook updates
   if (req.method === 'POST') {
-    try {
-      const signature = req.headers.get('x-hub-signature')
-      const body = await req.json() as WebhookBody
+    // Handle the webhook event
+    const data = await req.json()
+    console.log('Received webhook event:', data)
 
-      // Verify the webhook signature
-      if (!verifySignature(signature, body)) {
-        return new Response('Invalid signature', { status: 401 })
-      }
+    // Process the webhook data here
+    // ...
 
-      console.log('Received webhook:', body)
-
-      // Here you can process the Instagram updates
-      // For example, store new posts in your database
-
-      return new Response('OK', { status: 200 })
-    } catch (error) {
-      console.error('Error processing webhook:', error)
-      return new Response('Internal Server Error', { status: 500 })
-    }
+    return { status: 200, body: 'Event received' }
   }
 
-  return new Response('Method Not Allowed', { status: 405 })
-})
+  return { status: 405, body: 'Method not allowed' }
+}
 
 /* To invoke locally:
 
