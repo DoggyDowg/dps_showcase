@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       }
     } catch (error) {
       clearTimeout(timeoutId)
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.error('Request timed out after 60 seconds')
         return NextResponse.json(
           { error: 'Request timed out after 60 seconds' },
@@ -114,4 +114,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-} 
+}

@@ -14,12 +14,12 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
       const colors = property.agency_settings.branding.colors
       console.log('Setting brand colors:', colors)
       updateBrandColors({
-        dark: colors.dark,
-        light: colors.light,
+        dark: colors.dark || colors.text,
+        light: colors.light || colors.background,
         highlight: colors.accent
       })
     }
   }, [property])
 
   return null
-} 
+}

@@ -1,3 +1,5 @@
+import type { Agency } from '@/types/agency';
+
 export const defaultAgency: Partial<Agency> = {
   name: '',
   email: '',
@@ -44,4 +46,4 @@ export const defaultAgency: Partial<Agency> = {
     neighbourhood: 'Neighbourhood'
   },
   office_addresses: []
-} 
+}

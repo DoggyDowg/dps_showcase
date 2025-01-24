@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { AgentAsset, AgentAssets } from '@/types/agent'
 import { scrapeAgentFromUrl } from '../media-scraper/utils/agentScraper'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 interface AgentScraperModalProps {
   isOpen: boolean
   onClose: () => void
   onSelect: (assets: {
-    avatar?: AgentAsset,
+    avatar?: File,
     agentDetails?: {
       name?: string
       email?: string
@@ -67,11 +68,12 @@ function ImageSelectionModal({ isOpen, onClose, image, onSelect }: ImageSelectio
             </svg>
           </button>
         </div>
-        <div className="mb-4">
-          <img
+        <div className="mb-4 relative h-48 w-48 mx-auto">
+          <Image
             src={image.url}
             alt={image.name || 'Agent avatar'}
-            className="h-48 w-48 object-cover mx-auto rounded-full"
+            fill
+            className="object-cover rounded-full"
           />
         </div>
         <div className="flex gap-2 justify-center">
@@ -94,7 +96,7 @@ export function AgentScraperModal({ isOpen, onClose, onSelect, onStoreAvatar }: 
   const [error, setError] = useState<string | null>(null)
   const [assets, setAssets] = useState<AgentAssets | null>(null)
   const [selectedImage, setSelectedImage] = useState<AgentAsset | null>(null)
-  const [storedAvatar, setStoredAvatar] = useState<AgentAsset | null>(null)
+  const [storedAvatar, setStoredAvatar] = useState<File | null>(null)
   const [editableAgentDetails, setEditableAgentDetails] = useState<{
     name: string;
     email: string;
@@ -152,7 +154,7 @@ export function AgentScraperModal({ isOpen, onClose, onSelect, onStoreAvatar }: 
       const file = new File([blob], 'avatar.png', { type: 'image/png' })
       await onStoreAvatar(file)
 
-      setStoredAvatar(selectedImage)
+      setStoredAvatar(file)
     } catch (error) {
       console.error('Error fetching avatar:', error)
       throw error
@@ -213,7 +215,7 @@ export function AgentScraperModal({ isOpen, onClose, onSelect, onStoreAvatar }: 
                 <h3 className="font-medium mb-2">Profile Images</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {assets.images.map((image) => {
-                    const isStored = storedAvatar?.url === image.url
+                    const isStored = storedAvatar !== null
                     
                     return (
                       <div
@@ -223,11 +225,14 @@ export function AgentScraperModal({ isOpen, onClose, onSelect, onStoreAvatar }: 
                         }`}
                         onClick={() => setSelectedImage(image)}
                       >
-                        <img
-                          src={image.url}
-                          alt={image.name || 'Profile image'}
-                          className="h-48 w-48 object-cover mx-auto rounded-full"
-                        />
+                        <div className="relative h-48 w-48 mx-auto">
+                          <Image
+                            src={image.url}
+                            alt={image.name || 'Profile image'}
+                            fill
+                            className="object-cover rounded-full"
+                          />
+                        </div>
                         <div className="mt-2 text-sm text-center">
                           {isStored ? (
                             <span className="text-green-600">Stored as Avatar</span>
@@ -316,4 +321,4 @@ export function AgentScraperModal({ isOpen, onClose, onSelect, onStoreAvatar }: 
       />
     </div>
   )
-} 
+}

@@ -170,7 +170,7 @@ export default function AgentEditPage() {
       }
 
       const isNew = params.id === 'new'
-      const { data, error } = isNew
+      const { error } = isNew
         ? await supabase.from('agents').insert([updatedAgent]).select()
         : await supabase
             .from('agents')
@@ -183,7 +183,7 @@ export default function AgentEditPage() {
       }
 
       // Refresh the agencies page to update agent counts
-      const { data: agencyData, error: agencyError } = await supabase
+      const { error: agencyError } = await supabase
         .from('agency_settings')
         .select('*')
         .eq('id', updatedAgent.agency_id)
@@ -204,7 +204,17 @@ export default function AgentEditPage() {
     }
   }
 
-  const handleScraperSelect = async ({ avatar, agentDetails }) => {
+  interface ScraperCallbackParams {
+    avatar?: File
+    agentDetails?: {
+      name?: string
+      email?: string
+      phone?: string
+      position?: string
+    }
+  }
+
+  const handleScraperSelect = async ({ agentDetails }: ScraperCallbackParams) => {
     if (agentDetails) {
       setAgent(prev => ({
         ...prev,
@@ -436,7 +446,7 @@ export default function AgentEditPage() {
               </label>
               <select
                 value={agent.status}
-                onChange={(e) => setAgent({ ...agent, status: e.target.value })}
+                onChange={(e) => setAgent({ ...agent, status: e.target.value as 'active' | 'inactive' })}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
               >
                 <option value="active">Active</option>
@@ -472,4 +482,4 @@ export default function AgentEditPage() {
       />
     </div>
   )
-} 
+}

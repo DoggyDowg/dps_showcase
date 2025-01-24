@@ -11,9 +11,10 @@ interface Agency {
 interface AgencySelectProps {
   value: string
   onChange: (value: string) => void
+  className?: string
 }
 
-export function AgencySelect({ value, onChange }: AgencySelectProps) {
+export function AgencySelect({ value, onChange, className }: AgencySelectProps) {
   const [agencies, setAgencies] = useState<Agency[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -45,7 +46,7 @@ export function AgencySelect({ value, onChange }: AgencySelectProps) {
   if (loading) {
     return (
       <select 
-        className="w-full p-2 border rounded bg-gray-50" 
+        className={`w-full p-2 border rounded bg-gray-50 ${className || ''}`} 
         disabled
       >
         <option>Loading agencies...</option>
@@ -65,7 +66,7 @@ export function AgencySelect({ value, onChange }: AgencySelectProps) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full p-2 border rounded"
+      className={`w-full p-2 border rounded ${className || ''}`}
     >
       <option value="">Select an agency</option>
       {agencies.map((agency) => (
@@ -75,4 +76,4 @@ export function AgencySelect({ value, onChange }: AgencySelectProps) {
       ))}
     </select>
   )
-} 
+}

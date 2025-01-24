@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 import Image from 'next/image'
 import { FullscreenGallery } from './FullscreenGallery'
@@ -46,7 +46,7 @@ interface InstagramGalleryProps {
   hashtag: string
 }
 
-export function InstagramGallery({ property, hashtag }: InstagramGalleryProps) {
+export function InstagramGallery({ hashtag }: InstagramGalleryProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const { ref: sectionRef, inView } = useInView({
     threshold: 0.15,
@@ -54,11 +54,7 @@ export function InstagramGallery({ property, hashtag }: InstagramGalleryProps) {
     rootMargin: '-50px 0px'
   })
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
-  
-  // In the future, this will fetch from Instagram API
-  const [posts, setPosts] = useState<InstagramPost[]>(MOCK_INSTAGRAM_POSTS)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
+  const posts = MOCK_INSTAGRAM_POSTS
 
   // Scroll the gallery left or right
   const scroll = (direction: 'left' | 'right') => {
@@ -91,43 +87,6 @@ export function InstagramGallery({ property, hashtag }: InstagramGalleryProps) {
 
   const handleCloseFullscreen = () => {
     setSelectedImageIndex(null)
-  }
-
-  // Show loading state
-  if (loading) {
-    return (
-      <section className="relative py-16 bg-brand-dark">
-        <div className="relative w-full overflow-hidden px-6 sm:px-8 lg:px-12">
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2 px-1 mx-auto max-w-[1400px]">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="flex-shrink-0 flex-grow-0 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
-              >
-                <div className={styles.imageContainer}>
-                  <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  // Show error state
-  if (error) {
-    console.error('Instagram Gallery Error:', error)
-    return null
-  }
-
-  // Show empty state
-  if (!loading && (!posts || posts.length === 0)) {
-    return (
-      <div className="py-16 text-center text-brand-light">
-        <p>No Instagram posts found with #{hashtag}</p>
-      </div>
-    )
   }
 
   return (
@@ -210,4 +169,4 @@ export function InstagramGallery({ property, hashtag }: InstagramGalleryProps) {
       )}
     </>
   )
-} 
+}

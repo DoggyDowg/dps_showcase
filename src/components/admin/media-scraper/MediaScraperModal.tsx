@@ -18,7 +18,6 @@ export interface MediaAsset {
 type MediaTab = 'all' | 'images' | 'videos' | 'floorplans' | 'footer'
 
 export default function MediaScraperModal() {
-  const [url, setUrl] = useState('')
   const [assets, setAssets] = useState<MediaAsset[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -186,4 +185,4 @@ export default function MediaScraperModal() {
       </div>
     </div>
   )
-} 
+}

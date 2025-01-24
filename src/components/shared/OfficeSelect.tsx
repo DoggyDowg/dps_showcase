@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
+interface OfficeAddress {
+  id: string
+  name: string
+}
+
 interface OfficeSelectProps {
   value: string
   agencyId: string | null
@@ -11,7 +16,7 @@ interface OfficeSelectProps {
 
 export function OfficeSelect({ value, agencyId, onChange }: OfficeSelectProps) {
   const supabase = createClientComponentClient()
-  const [offices, setOffices] = useState<Array<{ id: string; name: string }>>([])
+  const [offices, setOffices] = useState<Array<{ id: string; name: string }>>([])  
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -36,7 +41,7 @@ export function OfficeSelect({ value, agencyId, onChange }: OfficeSelectProps) {
         if (error) throw error
 
         // Convert office addresses to the format we need
-        const officeList = (agency.office_addresses || []).map((office: any) => ({
+        const officeList = (agency.office_addresses || []).map((office: OfficeAddress) => ({
           id: office.id,
           name: office.name
         }))
@@ -84,4 +89,4 @@ export function OfficeSelect({ value, agencyId, onChange }: OfficeSelectProps) {
       ))}
     </select>
   )
-} 
+}

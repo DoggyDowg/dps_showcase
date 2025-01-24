@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import type { Agency } from '@/types/agency'
 import { getImageUrlWithHash } from '@/utils/imageUtils'
@@ -58,7 +59,7 @@ export default function AgenciesPage() {
   const [error, setError] = useState<Error | null>(null)
   const [agencyToDelete, setAgencyToDelete] = useState<Agency | null>(null)
 
-  const loadAgencies = async () => {
+  const loadAgencies = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -139,11 +140,11 @@ export default function AgenciesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     loadAgencies()
-  }, [])
+  }, [loadAgencies])
 
   const handleDeleteAgency = async (agency: Agency) => {
     try {
@@ -247,10 +248,13 @@ export default function AgenciesPage() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">{agency.name}</h3>
                     <div className="h-8 w-auto">
+                      {/* Replace img tags with Next.js Image component */}
                       {agency.branding?.logo?.dark && (
-                        <img 
+                        <Image 
                           src={agency.branding.logo.dark}
                           alt={`${agency.name} logo`}
+                          width={32}
+                          height={32}
                           className="h-full w-auto object-contain"
                           onError={(e) => {
                             console.log('Logo load error for', agency.name, ':', e);
@@ -259,9 +263,11 @@ export default function AgenciesPage() {
                         />
                       )}
                       {!agency.branding?.logo?.dark && (
-                        <img 
+                        <Image 
                           src="/placeholder-logo.png"
                           alt="Placeholder logo"
+                          width={32}
+                          height={32}
                           className="h-full w-auto object-contain opacity-50"
                         />
                       )}
@@ -307,4 +313,4 @@ export default function AgenciesPage() {
       </div>
     </>
   )
-} 
+}

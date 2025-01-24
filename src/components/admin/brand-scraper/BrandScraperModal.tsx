@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrandAsset, BrandAssets } from '@/types/brand'
 import { scrapeBrandFromUrl } from '../media-scraper/utils/brandScraper'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 interface BrandScraperModalProps {
   isOpen: boolean
@@ -42,7 +43,7 @@ function FontPreview({ font, isHeading, isBody, onClick }: FontPreviewProps) {
 
   useEffect(() => {
     // For Google Fonts
-    if (font.format === 'google') {
+    if (font.format === 'google' && font.url) {
       const urlParams = new URLSearchParams(font.url.split('?')[1])
       const familyParam = urlParams.get('family')
       if (familyParam) {
@@ -63,6 +64,8 @@ function FontPreview({ font, isHeading, isBody, onClick }: FontPreviewProps) {
     // For web fonts
     const loadWebFont = async () => {
       try {
+        if (!font.url || !font.name) return
+
         // Create a unique font family name based on the font name and a random string
         const uniqueFontFamily = `${font.name.replace(/[^a-zA-Z0-9]/g, '')}-${Math.random().toString(36).substring(2, 7)}`
         
@@ -127,7 +130,7 @@ function FontPreview({ font, isHeading, isBody, onClick }: FontPreviewProps) {
       }`}
       onClick={onClick}
     >
-      <div className="font-medium">{font.name}</div>
+      <div className="font-medium">{font.name || 'Unnamed Font'}</div>
       <div className="text-sm text-gray-500 mt-1">
         {font.format === 'google' ? 'Google Font' : 'Web Font'}
       </div>
@@ -198,10 +201,12 @@ function LogoSelectionModal({ isOpen, onClose, logo, onSelect }: LogoSelectionMo
           </button>
         </div>
         <div className="mb-4">
-          <img
-            src={logo.url}
+          <Image
+            src={logo.url || ''}
             alt={logo.name || 'Logo'}
-            className="h-24 w-auto mx-auto"
+            width={96}
+            height={48}
+            className="h-12 w-auto mx-auto object-contain"
           />
         </div>
         <div className="flex gap-2 justify-center">
@@ -399,10 +404,12 @@ export function BrandScraperModal({ isOpen, onClose, onSelect, onStoreLogo, onSt
                         }`}
                         onClick={() => setSelectedLogo(logo)}
                       >
-                        <img
-                          src={logo.url}
+                        <Image
+                          src={logo.url || ''}
                           alt={logo.name || 'Logo'}
-                          className="h-12 w-auto mx-auto"
+                          width={96}
+                          height={48}
+                          className="h-12 w-auto mx-auto object-contain"
                         />
                         <div className="mt-2 text-sm text-center">
                           {isDark && <span className="text-green-600">Stored as Dark Logo</span>}
@@ -556,4 +563,4 @@ export function BrandScraperModal({ isOpen, onClose, onSelect, onStoreLogo, onSt
       )}
     </div>
   )
-} 
+}

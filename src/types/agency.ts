@@ -16,6 +16,8 @@ export interface Agency {
   phone: string;
   website: string;
   status: 'active' | 'inactive';
+  propertyCount?: number;
+  agentCount?: number;
   copyright: string;
   branding?: {
     colors?: {
@@ -57,4 +59,4 @@ export interface MenuItems {
   viewings: string;
   lifestyle: string;
   neighbourhood: string;
-} 
+}

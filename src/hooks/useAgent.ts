@@ -11,7 +11,7 @@ interface Agent {
   office_address: string
 }
 
-export function useAgent(agentId: string | undefined) {
+export function useAgent(agentId: string | undefined | null) {
   const [agent, setAgent] = useState<Agent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -47,4 +47,4 @@ export function useAgent(agentId: string | undefined) {
   }, [agentId, supabase])
 
   return { agent, loading, error }
-} 
+}

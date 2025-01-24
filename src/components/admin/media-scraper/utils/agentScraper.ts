@@ -1,4 +1,4 @@
-import { AgentAsset, AgentAssets } from '@/types/agent'
+import type { AgentAsset, AgentAssets } from '@/types/agent'
 
 export async function scrapeAgentFromUrl(url: string): Promise<AgentAssets> {
   try {
@@ -43,4 +43,4 @@ export async function scrapeAgentFromUrl(url: string): Promise<AgentAssets> {
     console.error('Error scraping agent assets:', error)
     throw error
   }
-} 
+}

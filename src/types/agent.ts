@@ -12,6 +12,10 @@ export interface Agent {
   avatar_url?: string;
   metadata: Record<string, Json>;
   status: 'active' | 'inactive';
+  agency?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface AgentAsset {
@@ -29,4 +33,4 @@ export interface AgentAssets {
     phone?: string;
     position?: string;
   };
-} 
+}

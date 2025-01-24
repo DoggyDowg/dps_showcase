@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import type { Agency } from '@/types/agency'
 
@@ -12,7 +13,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  const loadAgencies = async () => {
+  const loadAgencies = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -31,11 +32,11 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     loadAgencies()
-  }, [])
+  }, [loadAgencies])
 
   const handleDeleteAgency = async (agencyId: string) => {
     try {
@@ -115,9 +116,11 @@ export default function AdminPage() {
                   <p className="text-gray-600">{agency.website}</p>
                 </div>
                 <div>
-                  <img 
+                  <Image 
                     src={agency.branding?.logo?.light || '/placeholder-logo.png'} 
                     alt={`${agency.name} logo`}
+                    width={48}
+                    height={48}
                     className="h-12 object-contain"
                   />
                 </div>
@@ -177,4 +180,4 @@ export default function AdminPage() {
       )}
     </div>
   )
-} 
+}

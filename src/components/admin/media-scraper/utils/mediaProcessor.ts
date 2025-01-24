@@ -1,5 +1,3 @@
-import { MediaAsset } from '../MediaScraperModal'
-
 interface ProcessedMedia {
   thumbnail: string
   dimensions?: {
@@ -9,7 +7,7 @@ interface ProcessedMedia {
   size: number
 }
 
-export async function processMediaAsset(url: string, type: 'image' | 'video'): Promise<ProcessedMedia> {
+export async function processMediaAsset(url: string): Promise<ProcessedMedia> {
   try {
     // TODO: Implement actual media processing logic
     // This is a placeholder that will need to be replaced with actual implementation
@@ -34,4 +32,4 @@ export async function processMediaAsset(url: string, type: 'image' | 'video'): P
     console.error('Error processing media:', error)
     throw new Error('Failed to process media asset')
   }
-} 
+}

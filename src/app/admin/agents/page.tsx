@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,7 +14,7 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  const loadAgents = async () => {
+  const loadAgents = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -39,7 +39,7 @@ export default function AgentsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     loadAgents()
@@ -75,7 +75,7 @@ export default function AgentsPage() {
 
       // Refresh the agency page to update agent counts
       if (agencyId) {
-        const { data: agencyData, error: agencyError } = await supabase
+        const { error: agencyError } = await supabase
           .from('agency_settings')
           .select('*')
           .eq('id', agencyId)
@@ -185,4 +185,4 @@ export default function AgentsPage() {
       )}
     </div>
   )
-} 
+}

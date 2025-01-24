@@ -7,7 +7,7 @@ import type { Property, FooterLink } from '@/types/property'
 export function useProperty(propertyId?: string) {
   const supabase = createClientComponentClient()
 
-  return useQuery({
+  return useQuery<Property | null>({  // Added explicit type annotation here
     queryKey: ['property', propertyId],
     queryFn: async () => {
       if (!propertyId) return null

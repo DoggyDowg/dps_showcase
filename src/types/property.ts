@@ -8,6 +8,8 @@ export interface PropertyContent {
     headline: string
     subheadline: string
   }
+  transition_headline?: string
+  transition_text?: string
   features: {
     items: PropertyFeature[]
     header: string
@@ -47,11 +49,9 @@ export interface AgencyBranding {
     light: string
   }
   colors: {
-    text: string
+    dark: string
+    light: string
     accent: string
-    primary: string
-    secondary: string
-    background: string
   }
   typography: {
     bodyFont: {
@@ -168,4 +168,4 @@ export interface Property {
     }
     office_addresses?: OfficeAddress[]
   }
-} 
+}
