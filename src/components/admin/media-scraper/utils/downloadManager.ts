@@ -1,11 +1,5 @@
 import { MediaAsset } from '../MediaScraperModal'
 
-interface DownloadProgress {
-  totalBytes: number
-  downloadedBytes: number
-  percentage: number
-}
-
 export async function downloadAssets(
   assets: MediaAsset[],
   onProgress: (progress: number) => void
@@ -47,38 +41,18 @@ export async function downloadAssets(
         if (!response.ok) {
           throw new Error(`Failed to download: ${response.statusText}`)
         }
-
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-
-        // Set up download
-        link.href = url
-        link.download = asset.url.split('/').pop() || `download-${i}`
-
-        // Trigger download
-        link.click()
-
-        // Clean up
-        window.URL.revokeObjectURL(url)
-
-        // Update progress
-        const progress = ((i + 1) / selectedAssets.length) * 100
-        onProgress(progress)
-
-        // Small delay between downloads
-        await new Promise(resolve => setTimeout(resolve, 500))
-
       } catch (error) {
-        console.error(`Failed to download asset: ${asset.url}`, error)
-        // Continue with next asset
+        console.error(`Error downloading asset: ${error}`)
       }
+
+      // Update progress
+      onProgress(((i + 1) / selectedAssets.length) * 100)
     }
 
     // Clean up
     document.body.removeChild(link)
-    
   } catch (error) {
-    console.error('Error downloading assets:', error)
+    console.error('Error in downloadAssets:', error)
     throw error
   }
-} 
+}

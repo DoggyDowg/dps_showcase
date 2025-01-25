@@ -11,7 +11,7 @@ interface HeaderLinkProps {
 export function HeaderLink({ href, children, className, onClick }: HeaderLinkProps) {
   const isHashLink = href.startsWith('#')
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isHashLink) {
       e.preventDefault()
       const element = document.querySelector(href)
@@ -37,4 +37,4 @@ export function HeaderLink({ href, children, className, onClick }: HeaderLinkPro
       {children}
     </Link>
   )
-} 
+}

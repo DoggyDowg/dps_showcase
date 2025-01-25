@@ -295,17 +295,20 @@ function PropertyEditContent({ id }: { id: string }) {
 
   // Handle content updates
   const handleContentChange = (section: keyof PropertyContent, field: string, value: string | PropertyFeature[]) => {
-    setProperty(prev => ({
-      ...prev,
-      content: {
-        ...prev.content,
-        [section]: {
-          ...prev.content[section],
-          [field]: value
-        }
-      },
-      updated_at: new Date().toISOString()
-    }))
+    setProperty(prev => {
+      const currentSectionContent = prev.content?.[section] || {}
+      return {
+        ...prev,
+        content: {
+          ...prev.content,
+          [section]: {
+            ...currentSectionContent,
+            [field]: value
+          }
+        },
+        updated_at: new Date().toISOString()
+      }
+    })
   }
 
   // Handle feature list updates
@@ -1724,4 +1727,4 @@ function PropertyEditContent({ id }: { id: string }) {
 export default function PropertyEditPage() {
   const params = useParams()
   return <PropertyEditContent id={params.id as string} />
-} 
+}

@@ -61,13 +61,24 @@ export default function TemplateManagement() {
           minor: newVersion.minor,
           patch: newVersion.patch,
           is_stable: newVersion.is_stable,
-          changes: newVersion.changes
+          changes: newVersion.changes,
+          created_at: template.created_at
         })
 
       if (error) throw error
 
       templateManager.registerTemplate(template)
       await loadTemplates()
+
+      // Reset form after successful creation
+      setNewVersion({
+        major: 1,
+        minor: 0,
+        patch: 0,
+        created_at: new Date().toISOString(),
+        changes: [],
+        is_stable: false
+      })
     } catch (error) {
       console.error('Error creating template version:', error)
     }
@@ -101,8 +112,9 @@ export default function TemplateManagement() {
             <input
               type="number"
               value={newVersion.major}
-              onChange={(e) => setNewVersion(prev => ({ ...prev, major: parseInt(e.target.value) }))}
+              onChange={(e) => setNewVersion(prev => ({ ...prev, major: parseInt(e.target.value) || 0 }))}
               className="w-full p-2 border rounded"
+              min="0"
             />
           </div>
           <div>
@@ -110,8 +122,9 @@ export default function TemplateManagement() {
             <input
               type="number"
               value={newVersion.minor}
-              onChange={(e) => setNewVersion(prev => ({ ...prev, minor: parseInt(e.target.value) }))}
+              onChange={(e) => setNewVersion(prev => ({ ...prev, minor: parseInt(e.target.value) || 0 }))}
               className="w-full p-2 border rounded"
+              min="0"
             />
           </div>
           <div>
@@ -119,8 +132,9 @@ export default function TemplateManagement() {
             <input
               type="number"
               value={newVersion.patch}
-              onChange={(e) => setNewVersion(prev => ({ ...prev, patch: parseInt(e.target.value) }))}
+              onChange={(e) => setNewVersion(prev => ({ ...prev, patch: parseInt(e.target.value) || 0 }))}
               className="w-full p-2 border rounded"
+              min="0"
             />
           </div>
         </div>
@@ -128,7 +142,7 @@ export default function TemplateManagement() {
           <label className="block text-sm font-medium mb-1">Changes</label>
           <textarea
             value={newVersion.changes.join('\n')}
-            onChange={(e) => setNewVersion(prev => ({ ...prev, changes: e.target.value.split('\n') }))}
+            onChange={(e) => setNewVersion(prev => ({ ...prev, changes: e.target.value.split('\n').filter(Boolean) }))}
             className="w-full p-2 border rounded"
             rows={4}
             placeholder="Enter changes (one per line)"
@@ -172,7 +186,7 @@ export default function TemplateManagement() {
                   <p className="text-sm text-gray-600">
                     Created: {new Date(template.created_at).toLocaleDateString()}
                   </p>
-                  {template.changes.length > 0 && (
+                  {template.changes?.length > 0 && (
                     <ul className="text-sm text-gray-600 mt-2">
                       {template.changes.map((change: string, i: number) => (
                         <li key={i}>• {change}</li>
@@ -201,4 +215,4 @@ export default function TemplateManagement() {
       </div>
     </div>
   )
-} 
+}

@@ -1,4 +1,5 @@
-import { ChangeEvent, useEffect, useState } from 'react'
+import { useState, useEffect, ChangeEvent } from 'react'
+import Image from 'next/image'
 
 interface FileUploadProps {
   label: string
@@ -86,9 +87,11 @@ export function FileUpload({ label, accept, value, onChange, isDarkBg, isFont }:
                 </div>
               </div>
             ) : (
-              <img
-                src={value}
+              <Image
+                src={value || '/placeholder-image.png'}
                 alt={`Current ${label}`}
+                width={64}
+                height={64}
                 className="h-16 w-auto object-contain"
               />
             )}
@@ -97,4 +100,4 @@ export function FileUpload({ label, accept, value, onChange, isDarkBg, isFont }:
       )}
     </div>
   )
-} 
+}

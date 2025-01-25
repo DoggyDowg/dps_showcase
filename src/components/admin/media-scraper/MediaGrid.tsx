@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
 interface MediaGridAsset {
   id: string;
@@ -73,7 +74,7 @@ export function MediaGrid({ assets, onAssetSelect }: MediaGridProps) {
                   </svg>
                 </div>
               ) : (
-                <img
+                <Image
                   src={asset.url}
                   alt=""
                   className="w-full h-full object-cover"
@@ -110,4 +111,4 @@ export function MediaGrid({ assets, onAssetSelect }: MediaGridProps) {
       ))}
     </div>
   )
-} 
+}

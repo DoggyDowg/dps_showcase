@@ -7,10 +7,9 @@ export default function LoadingScreen() {
   const [show, setShow] = useState(true)
 
   useEffect(() => {
-    // Remove from DOM after animation completes
     const timer = setTimeout(() => {
       setShow(false)
-    }, 2500) // Match the animation duration
+    }, 2500)
 
     return () => clearTimeout(timer)
   }, [])
@@ -24,12 +23,12 @@ export default function LoadingScreen() {
           src="/logos/dps_whitebg.png"
           alt="Digital Property Showcase"
           fill
+          sizes="(max-width: 256px) 100vw, 256px"
           className="object-contain"
           priority
         />
       </div>
       <div className="text-xl">Loading demonstration...</div>
-      <div className="loader"></div>
     </div>
   )
-} 
+}

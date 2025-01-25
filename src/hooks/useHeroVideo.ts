@@ -11,6 +11,8 @@ export function useHeroVideo(propertyId?: string) {
 
   useEffect(() => {
     async function loadVideo() {
+      setLoading(true)
+      setError(null)
       if (!propertyId) {
         console.log('No propertyId provided')
         setLoading(false)
@@ -67,4 +69,4 @@ export function useHeroVideo(propertyId?: string) {
   }, [supabase, propertyId])
 
   return { videoUrl, loading, error }
-} 
+}

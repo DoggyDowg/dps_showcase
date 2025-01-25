@@ -143,8 +143,8 @@ export default function AgenciesPage() {
   }, [supabase])
 
   useEffect(() => {
-    loadAgencies()
-  }, [])
+    loadAgencies();
+  }, [loadAgencies]);  // Include loadAgencies in the dependency array
 
   const handleDeleteAgency = async (agency: Agency) => {
     try {
