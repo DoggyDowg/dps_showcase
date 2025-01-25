@@ -97,7 +97,17 @@ export function MoreInfo({ property }: MoreInfoProps) {
   // Guard against undefined content
   if (!moreInfo) return null
 
-  const accentColor = property.agency_settings?.branding?.colors?.accent || '#f5f5f5'
+  // Add proper null checks for agency settings and branding
+  const agencySettings = property.agency_settings || {
+    branding: {
+      colors: {
+        accent: '#f5f5f5'
+      }
+    }
+  }
+  const branding = agencySettings.branding
+  const colors = branding.colors
+  const accentColor = colors.accent
 
   return (
     <section 
