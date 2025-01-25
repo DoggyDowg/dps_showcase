@@ -1,8 +1,8 @@
 :root {
   /* Initial values that will be overridden by JavaScript */
-  --brand-dark: #000000;
-  --brand-light: #FFFFFF;
-  --brand-highlight: var(--brand-dark);
+  --brand-dark: #000000 !important;
+  --brand-light: #FFFFFF !important;
+  --brand-highlight: var(--brand-dark) !important;
   
   /* Font family variables */
   --font-paragraph: system-ui, sans-serif;

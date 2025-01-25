@@ -10,8 +10,6 @@ interface ClientLayoutProps {
 }
 
 export function ClientLayout({ property, children }: ClientLayoutProps) {
-  console.log('ClientLayout rendering with property:', property)
-  
   return (
     <>
       <BrandColorInitializer property={property} />
@@ -19,4 +17,4 @@ export function ClientLayout({ property, children }: ClientLayoutProps) {
       {children}
     </>
   )
-} 
+}

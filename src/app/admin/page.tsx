@@ -38,9 +38,8 @@ export default function AdminPage() {
     loadAgencies()
   }, [loadAgencies])
 
-  const handleDeleteAgency = async (agencyId: string) => {
+  const handleDeleteAgency = useCallback(async (agencyId: string) => {
     try {
-      // First, delete all assets from storage
       const { data: storageData, error: storageError } = await supabase.storage
         .from('agency-assets')
         .list(agencyId)
@@ -50,7 +49,6 @@ export default function AdminPage() {
         throw storageError
       }
 
-      // Delete each file in the agency's folder
       if (storageData && storageData.length > 0) {
         const { error: deleteError } = await supabase.storage
           .from('agency-assets')
@@ -62,7 +60,6 @@ export default function AdminPage() {
         }
       }
 
-      // Then delete the agency record
       const { error: deleteAgencyError } = await supabase
         .from('agency_settings')
         .delete()
@@ -70,14 +67,13 @@ export default function AdminPage() {
 
       if (deleteAgencyError) throw deleteAgencyError
 
-      // Refresh the agencies list
       loadAgencies()
       toast.success('Agency deleted successfully')
     } catch (error) {
       console.error('Error deleting agency:', error)
       toast.error('Failed to delete agency')
     }
-  }
+  }, [supabase, loadAgencies])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -168,9 +164,7 @@ export default function AdminPage() {
               </div>
 
               <div className="mt-4">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  agency.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${agency.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                   {agency.status === 'active' ? 'active' : 'inactive'}
                 </span>
               </div>

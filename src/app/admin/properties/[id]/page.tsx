@@ -296,23 +296,20 @@ function PropertyEditContent({ id }: { id: string }) {
   // Handle content updates
   const handleContentChange = (section: keyof PropertyContent, field: string, value: string | PropertyFeature[]) => {
     setProperty(prev => {
-      const sectionContent = prev.content[section] as {
-        [key: string]: string | PropertyFeature[]
-      };
-      
+      const currentSectionContent = prev.content?.[section] || {}
       return {
         ...prev,
         content: {
           ...prev.content,
           [section]: {
-            ...sectionContent,
+            ...currentSectionContent,
             [field]: value
           }
         },
         updated_at: new Date().toISOString()
-      };
-    });
-  };
+      }
+    })
+  }
 
   // Handle feature list updates
   const handleFeatureChange = (index: number, value: string) => {

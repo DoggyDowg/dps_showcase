@@ -97,14 +97,17 @@ export function MoreInfo({ property }: MoreInfoProps) {
   // Guard against undefined content
   if (!moreInfo) return null
 
-  const accentColor = property.agency_settings?.branding.colors.accent
+  // Add proper null checks for agency settings and branding
+  const branding = property.agency_settings?.branding
+  const colors = branding?.colors
+  const accentColor = colors?.accent || '#f5f5f5'
 
   return (
     <section 
       ref={sectionRef}
       className="py-20"
       style={{ 
-        backgroundColor: accentColor || '#f5f5f5'
+        backgroundColor: accentColor
       }}
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
@@ -351,4 +354,4 @@ export function MoreInfo({ property }: MoreInfoProps) {
       )}
     </section>
   )
-} 
+}

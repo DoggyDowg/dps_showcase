@@ -74,15 +74,13 @@ export function MediaGrid({ assets, onAssetSelect }: MediaGridProps) {
                   </svg>
                 </div>
               ) : (
-                <div className="relative w-full h-full">
-                  <Image
-                    src={asset.url}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    onError={() => handleImageError(asset.id)}
-                  />
-                </div>
+                <Image
+                  src={asset.url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={() => handleImageError(asset.id)}
+                />
               )}
             </div>
           )}

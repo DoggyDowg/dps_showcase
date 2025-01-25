@@ -1,7 +1,5 @@
-'use client';
-
-import { ChangeEvent, useEffect, useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect, ChangeEvent } from 'react'
+import Image from 'next/image'
 
 interface FileUploadProps {
   label: string;
@@ -86,23 +84,17 @@ export function FileUpload({ label, accept, value, onChange, isDarkBg, isFont }:
                 </div>
               </div>
             ) : (
-              value ? (
-                <Image
-                  src={value}
-                  alt={`Current ${label}`}
-                  width={64}
-                  height={64}
-                  className="h-16 w-auto object-contain"
-                />
-              ) : (
-                <div className="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
-                  <span className="text-gray-400 text-sm">No image</span>
-                </div>
-              )
+              <Image
+                src={value || '/placeholder-image.png'}
+                alt={`Current ${label}`}
+                width={64}
+                height={64}
+                className="h-16 w-auto object-contain"
+              />
             )}
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }

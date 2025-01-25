@@ -9,8 +9,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="overflow-x-hidden font-sans">
-      <body className="overflow-x-hidden font-sans">
+    <html lang="en">
+      <body>
         {children}
         <Toaster position="top-right" richColors />
       </body>
