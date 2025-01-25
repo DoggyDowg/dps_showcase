@@ -51,10 +51,12 @@ const config: Config = {
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-    require('tailwind-scrollbar'),
+  safelist: [
+    'text-brand-light',
+    'text-brand-dark',
+    'bg-brand-light',
+    'bg-brand-dark',
   ],
-}
+} satisfies Config;
 
 export default config;

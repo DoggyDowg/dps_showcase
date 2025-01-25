@@ -12,31 +12,32 @@ export function Hero({ property }: HeroProps) {
   const { videoUrl } = useHeroVideo(property.id)
 
   return (
-    <section className="relative h-screen w-full z-0">
+    <section className="relative h-screen w-full">
       {/* Video Background */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden -z-10">
         {videoUrl ? (
           <video
-            className="absolute min-h-full min-w-full object-cover"
+            className="absolute h-[100vh] w-full object-cover"
             autoPlay
             muted
             loop
             playsInline
+            style={{ position: 'fixed', top: 0, left: 0, zIndex: -30 }}
           >
             <source src={videoUrl} type="video/mp4" />
           </video>
         ) : (
           <div className="absolute inset-0 bg-brand-dark" />
         )}
-        <div className="absolute inset-0 bg-brand-dark/30" />
+        <div className="absolute inset-0 bg-brand-dark/70" style={{ position: 'fixed', top: 0, left: 0, zIndex: -20 }} />
       </div>
 
       {/* Content */}
       <div className="relative h-full flex flex-col text-brand-light text-center px-4 sm:px-6 lg:px-12">
         {/* Top Section - Property Address */}
         <div className="pt-[120px] sm:pt-[160px]">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-light mb-2">{property.street_address}</h2>
-          <h3 className="text-2xl sm:text-3xl md:text-5xl font-light">{property.suburb}</h3>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-light mb-2 text-brand-light">{property.street_address}</h2>
+          <h3 className="text-2xl sm:text-3xl md:text-5xl font-light text-brand-light">{property.suburb}</h3>
         </div>
         
         {/* Bottom Section */}
@@ -75,14 +76,14 @@ export function Hero({ property }: HeroProps) {
           </div>
 
           {/* Headline and Subheadline */}
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-light mb-3 sm:mb-4 px-4 sm:px-0">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-light mb-3 sm:mb-4 px-4 sm:px-0 text-brand-light">
             {property.content.hero.headline}
           </h1>
-          <p className="text-lg sm:text-xl md:text-2xl font-light max-w-2xl mx-auto px-4 sm:px-0">
+          <p className="text-lg sm:text-xl md:text-2xl font-light max-w-2xl mx-auto px-4 sm:px-0 text-brand-light">
             {property.content.hero.subheadline}
           </p>
         </div>
       </div>
     </section>
   )
-} 
+}
