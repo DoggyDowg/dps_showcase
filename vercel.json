@@ -1,0 +1,29 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "github": {
+    "enabled": true,
+    "silent": false
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "zeroConfig": true
+      }
+    }
+  ],
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "crons": [],
+  "cache": {
+    "clear": true
+  }
+}

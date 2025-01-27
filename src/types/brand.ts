@@ -8,6 +8,12 @@ export interface BrandAsset {
   confidence: number;
 }
 
+export interface BrandColors {
+  dark: string;
+  light: string;
+  highlight?: string;
+}
+
 export interface BrandAssets {
   logos: BrandAsset[];
   fonts: BrandAsset[];
@@ -19,4 +25,4 @@ export interface BrandAssets {
     website?: string;
     copyrightText?: string;
   };
-} 
+}
