@@ -32,9 +32,9 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
 
       console.log('BrandColorInitializer: Agency settings:', property.agency_settings)
 
-      // Early return with default colors if agency_settings is missing
-      if (!property.agency_settings) {
-        console.log('BrandColorInitializer: No agency settings, using default colors')
+      // Early return with default colors if agency_settings is missing or invalid
+      if (!property.agency_settings || typeof property.agency_settings !== 'object') {
+        console.log('BrandColorInitializer: No valid agency settings, using default colors')
         updateBrandColors({
           dark: defaultColors.dark,
           light: defaultColors.light,
@@ -45,9 +45,9 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
 
       console.log('BrandColorInitializer: Agency branding:', property.agency_settings.branding)
 
-      // Early return with default colors if branding is missing
-      if (!property.agency_settings.branding) {
-        console.log('BrandColorInitializer: No branding data, using default colors')
+      // Early return with default colors if branding is missing or invalid
+      if (!property.agency_settings.branding || typeof property.agency_settings.branding !== 'object') {
+        console.log('BrandColorInitializer: No valid branding data, using default colors')
         updateBrandColors({
           dark: defaultColors.dark,
           light: defaultColors.light,
@@ -56,9 +56,19 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
         return
       }
 
-      // Early return with default colors if colors object is missing
+      // Early return with default colors if colors object is missing or invalid
       const colors = property.agency_settings.branding.colors
       console.log('BrandColorInitializer: Brand colors:', colors)
+      
+      if (!colors || typeof colors !== 'object') {
+        console.log('BrandColorInitializer: No valid colors object, using default colors')
+        updateBrandColors({
+          dark: defaultColors.dark,
+          light: defaultColors.light,
+          highlight: defaultColors.accent
+        })
+        return
+      }
 
       if (!colors) {
         console.log('BrandColorInitializer: No colors object, using default colors')
