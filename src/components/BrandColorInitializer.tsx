@@ -11,14 +11,19 @@ interface BrandColorInitializerProps {
 export function BrandColorInitializer({ property }: BrandColorInitializerProps) {
   useEffect(() => {
     const colors = property?.agency_settings?.branding?.colors
-    if (colors) {
-      console.log('Setting brand colors:', colors)
-      updateBrandColors({
-        dark: colors.dark,
-        light: colors.light,
-        highlight: colors.accent
-      })
+    const defaultColors = {
+      dark: '#000000',
+      light: '#FFFFFF',
+      accent: '#000000'
     }
+
+    console.log('Brand colors from property:', colors)
+
+    updateBrandColors({
+      dark: colors?.dark || defaultColors.dark,
+      light: colors?.light || defaultColors.light,
+      highlight: colors?.accent || defaultColors.accent
+    })
   }, [property])
 
   return null
