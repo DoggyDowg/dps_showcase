@@ -141,11 +141,9 @@ export interface Property {
         light: string
       }
       colors: {
-        text: string
+        dark: string
+        light: string
         accent: string
-        primary: string
-        secondary: string
-        background: string
       }
       typography: {
         bodyFont: {
