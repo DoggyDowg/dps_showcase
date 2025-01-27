@@ -85,7 +85,7 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
       const finalColors = {
         dark: colors.dark,
         light: colors.light,
-        highlight: colors.accent || defaultColors.accent
+        highlight: colors.highlight || defaultColors.accent
       }
 
       console.log('BrandColorInitializer: Applying final colors:', finalColors)
