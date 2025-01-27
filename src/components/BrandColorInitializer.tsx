@@ -45,9 +45,10 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
 
       console.log('BrandColorInitializer: Agency branding:', property.agency_settings.branding)
 
-      // Early return with default colors if branding is missing or invalid
-      if (!property.agency_settings.branding || typeof property.agency_settings.branding !== 'object') {
-        console.log('BrandColorInitializer: No valid branding data, using default colors')
+      // Early return with default colors if branding or colors is missing or invalid
+      const branding = property.agency_settings.branding
+      if (!branding || typeof branding !== 'object' || !branding.colors) {
+        console.log('BrandColorInitializer: No valid branding data or colors, using default colors')
         updateBrandColors({
           dark: defaultColors.dark,
           light: defaultColors.light,

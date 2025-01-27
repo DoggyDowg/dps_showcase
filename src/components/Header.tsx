@@ -38,10 +38,16 @@ export function Header({ property }: HeaderProps) {
     console.log('Menu Items Type:', typeof property?.agency_settings?.menu_items)
     console.log('Menu Items Keys:', property?.agency_settings?.menu_items ? Object.keys(property.agency_settings.menu_items) : 'No menu items')
 
-    // Check both agency_settings and menu_items since they're both optional
-    const customMenuItems = property?.agency_settings?.menu_items
-    if (!customMenuItems) {
-      console.log('Using default menu items because customMenuItems is:', customMenuItems)
+    // Check if property and agency_settings exist
+    if (!property || !property.agency_settings) {
+      console.log('Using default menu items because property or agency_settings is missing')
+      return DEFAULT_MENU_ITEMS
+    }
+
+    // Check if menu_items exists and is a valid object
+    const customMenuItems = property.agency_settings.menu_items
+    if (!customMenuItems || typeof customMenuItems !== 'object' || Object.keys(customMenuItems).length === 0) {
+      console.log('Using default menu items because customMenuItems is invalid:', customMenuItems)
       return DEFAULT_MENU_ITEMS
     }
 
@@ -52,7 +58,7 @@ export function Header({ property }: HeaderProps) {
     console.log('Custom menu items viewings:', customMenuItems.viewings)
     console.log('Custom menu items contact:', customMenuItems.contact)
 
-    // Now we know customMenuItems exists, map the values with fallbacks
+    // Map the values with fallbacks, ensuring we handle undefined or null values
     return [
       { label: customMenuItems.features || DEFAULT_MENU_ITEMS[0].label, href: '#features' },
       { label: customMenuItems.lifestyle || DEFAULT_MENU_ITEMS[1].label, href: '#lifestyle' },
