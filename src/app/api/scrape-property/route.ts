@@ -3,18 +3,17 @@ import { headers } from 'next/headers'
 
 export async function POST(request: Request) {
   const startTime = Date.now()
+  const headersList = await headers()
+  const origin = headersList.get('origin') || '*'
+
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400'
+  }
+
   try {
-    // Add CORS headers
-    const headersList = headers()
-    const origin = headersList.get('origin') || '*'
-
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Max-Age': '86400'
-    }
-
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
       return new NextResponse(null, { headers: corsHeaders })
