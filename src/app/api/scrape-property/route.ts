@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     
     // Create AbortController for timeout
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 120000) // 120 second timeout
     
     try {
       // Call Dify API with timeout
@@ -52,7 +52,9 @@ export async function POST(request: Request) {
           response_mode: 'blocking',
           user
         }),
-        signal: controller.signal
+        signal: controller.signal,
+        // Add keepalive to prevent connection drops
+        keepalive: true
       })
 
       clearTimeout(timeoutId)
@@ -61,6 +63,25 @@ export async function POST(request: Request) {
       console.log(`Dify API request completed in ${endTime - startTime}ms`)
       console.log('Dify API response status:', response.status)
       
+      // Handle non-200 responses immediately
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Dify API error response:', errorText)
+        return NextResponse.json(
+          { error: `Dify API error: ${response.status} - ${errorText}` },
+          { status: response.status }
+        )
+      }
+
+      // Ensure we can read the response body
+      if (!response.body) {
+        console.error('No response body received from Dify API')
+        return NextResponse.json(
+          { error: 'No response body received from Dify API' },
+          { status: 502 }
+        )
+      }
+
       const responseText = await response.text()
       console.log('Dify API response:', responseText)
 
