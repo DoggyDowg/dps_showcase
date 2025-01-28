@@ -1,22 +1,39 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 
 export async function POST(request: Request) {
   const startTime = Date.now()
   try {
+    // Add CORS headers
+    const headersList = headers()
+    const origin = headersList.get('origin') || '*'
+
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400'
+    }
+
+    // Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, { headers: corsHeaders })
+    }
+
     const { listing_url, listing_text, user } = await request.json()
     console.log('Received request:', { listing_url, listing_text, user })
 
     if (!listing_url) {
       return NextResponse.json(
         { error: 'listing_url is required' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
     if (!user) {
       return NextResponse.json(
         { error: 'user identifier is required' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -26,7 +43,7 @@ export async function POST(request: Request) {
     if (!difyApiKey) {
       return NextResponse.json(
         { error: 'Dify API key not configured' },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       )
     }
 
@@ -69,7 +86,7 @@ export async function POST(request: Request) {
         console.error('Dify API error response:', errorText)
         return NextResponse.json(
           { error: `Dify API error: ${response.status} - ${errorText}` },
-          { status: response.status }
+          { status: response.status, headers: corsHeaders }
         )
       }
 
@@ -78,7 +95,7 @@ export async function POST(request: Request) {
         console.error('No response body received from Dify API')
         return NextResponse.json(
           { error: 'No response body received from Dify API' },
-          { status: 502 }
+          { status: 502, headers: corsHeaders }
         )
       }
 
@@ -88,7 +105,7 @@ export async function POST(request: Request) {
       if (!response.ok) {
         return NextResponse.json(
           { error: `Failed to scrape property content: ${responseText}` },
-          { status: response.status }
+          { status: response.status, headers: corsHeaders }
         )
       }
 
@@ -100,29 +117,29 @@ export async function POST(request: Request) {
           try {
             // Try to parse the text field if it's a JSON string
             const content = JSON.parse(data.data.outputs.text)
-            return NextResponse.json(content)
+            return NextResponse.json(content, { headers: corsHeaders })
           } catch {
             // If parsing fails, return the text as is
-            return NextResponse.json(data.data.outputs)
+            return NextResponse.json(data.data.outputs, { headers: corsHeaders })
           }
         } else {
           // If the response doesn't match expected format, return the raw data
-          return NextResponse.json(data)
+          return NextResponse.json(data, { headers: corsHeaders })
         }
       } catch (error) {
         console.error('Error parsing Dify response:', error)
         return NextResponse.json(
           { error: 'Failed to parse property content: ' + (error instanceof Error ? error.message : String(error)) },
-          { status: 500 }
+          { status: 500, headers: corsHeaders }
         )
       }
     } catch (error) {
       clearTimeout(timeoutId)
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error('Request timed out after 60 seconds')
+        console.error('Request timed out after 120 seconds')
         return NextResponse.json(
-          { error: 'Request timed out after 60 seconds' },
-          { status: 524 }
+          { error: 'Request timed out after 120 seconds' },
+          { status: 524, headers: corsHeaders }
         )
       }
       throw error // Re-throw other errors to be caught by outer try-catch
@@ -132,7 +149,7 @@ export async function POST(request: Request) {
     console.error(`Error in scrape-property API after ${endTime - startTime}ms:`, error)
     return NextResponse.json(
       { error: 'Internal server error: ' + (error instanceof Error ? error.message : String(error)) },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
