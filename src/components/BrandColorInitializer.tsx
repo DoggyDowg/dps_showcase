@@ -2,108 +2,46 @@
 
 import { useEffect } from 'react'
 import { updateBrandColors } from '@/utils/updateBrandColors'
-import type { Property } from '@/types/property'
+import type { Property, AgencyBranding } from '@/types/property'
 
 interface BrandColorInitializerProps {
   property: Property | null | undefined
 }
 
-const defaultColors = {
+const defaultColors: AgencyBranding['colors'] = {
   dark: '#000000',
   light: '#FFFFFF',
   accent: '#000000'
 }
 
-export function BrandColorInitializer({ property }: BrandColorInitializerProps) {
+const BrandColorInitializer = ({ property }: BrandColorInitializerProps) => {
   useEffect(() => {
     try {
-      console.log('BrandColorInitializer: Initializing with property:', property)
+      console.error('[BrandColor] Initializing with property:', property)
 
-      // Early return with default colors if property is null or undefined
-      if (!property) {
-        console.log('BrandColorInitializer: No property data, using default colors')
-        updateBrandColors({
-          dark: defaultColors.dark,
-          light: defaultColors.light,
-          highlight: defaultColors.accent
-        })
-        return
+      // Get colors with strong null checks and fallbacks
+      const colors = (property?.agency_settings?.branding?.colors || defaultColors) as AgencyBranding['colors']
+      const dark = colors.dark ?? defaultColors.dark
+      const light = colors.light ?? defaultColors.light
+      const accent = colors.accent ?? defaultColors.accent
+
+      console.error('[BrandColor] Resolved colors:', { dark, light, accent })
+
+      // Validate colors before applying
+      if (!dark || !light) {
+        throw new Error('Required colors missing or invalid')
       }
 
-      console.log('BrandColorInitializer: Agency settings:', property.agency_settings)
+      // Apply the validated colors
+      const result = updateBrandColors({
+        dark,
+        light,
+        highlight: accent
+      })
 
-      // Early return with default colors if agency_settings is missing or invalid
-      if (!property.agency_settings || typeof property.agency_settings !== 'object') {
-        console.log('BrandColorInitializer: No valid agency settings, using default colors')
-        updateBrandColors({
-          dark: defaultColors.dark,
-          light: defaultColors.light,
-          highlight: defaultColors.accent
-        })
-        return
-      }
-
-      console.log('BrandColorInitializer: Agency branding:', property.agency_settings.branding)
-
-      // Early return with default colors if branding or colors is missing or invalid
-      const branding = property.agency_settings.branding
-      if (!branding || typeof branding !== 'object' || !branding.colors) {
-        console.log('BrandColorInitializer: No valid branding data or colors, using default colors')
-        updateBrandColors({
-          dark: defaultColors.dark,
-          light: defaultColors.light,
-          highlight: defaultColors.accent
-        })
-        return
-      }
-
-      // Early return with default colors if colors object is missing or invalid
-      const colors = property.agency_settings.branding.colors
-      console.log('BrandColorInitializer: Brand colors:', colors)
-      
-      if (!colors || typeof colors !== 'object') {
-        console.log('BrandColorInitializer: No valid colors object, using default colors')
-        updateBrandColors({
-          dark: defaultColors.dark,
-          light: defaultColors.light,
-          highlight: defaultColors.accent
-        })
-        return
-      }
-
-      if (!colors) {
-        console.log('BrandColorInitializer: No colors object, using default colors')
-        updateBrandColors({
-          dark: defaultColors.dark,
-          light: defaultColors.light,
-          highlight: defaultColors.accent
-        })
-        return
-      }
-
-      // If any required color is missing or undefined, use default colors
-      if (!colors.dark || !colors.light) {
-        console.log('BrandColorInitializer: Missing required colors, using default colors')
-        updateBrandColors({
-          dark: defaultColors.dark,
-          light: defaultColors.light,
-          highlight: defaultColors.accent
-        })
-        return
-      }
-
-      // At this point, we know we have valid dark and light colors
-      const finalColors = {
-        dark: colors.dark,
-        light: colors.light,
-        highlight: colors.accent || defaultColors.accent
-      }
-
-      console.log('BrandColorInitializer: Applying final colors:', finalColors)
-      const result = updateBrandColors(finalColors)
-      console.log('BrandColorInitializer: Colors applied successfully:', result)
+      console.error('[BrandColor] Colors applied successfully:', result)
     } catch (error) {
-      console.error('BrandColorInitializer: Error occurred:', error)
+      console.error('[BrandColor] Error:', error)
       
       // In case of any error, fall back to default colors
       updateBrandColors({
@@ -116,3 +54,5 @@ export function BrandColorInitializer({ property }: BrandColorInitializerProps) 
 
   return null
 }
+
+export { BrandColorInitializer }
