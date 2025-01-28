@@ -19,11 +19,20 @@ const BrandColorInitializer = ({ property }: BrandColorInitializerProps) => {
     try {
       console.error('[BrandColor] Initializing with property:', property)
 
-      // Get colors with strong null checks and fallbacks
-      const colors = (property?.agency_settings?.branding?.colors || defaultColors) as AgencyBranding['colors']
-      const dark = colors.dark ?? defaultColors.dark
-      const light = colors.light ?? defaultColors.light
-      const accent = colors.accent ?? defaultColors.accent
+      // 1. Null-safe navigation for ENTIRE chain
+      const colors = property?.agency_settings?.branding?.colors
+      
+      // 2. Validate colors structure before destructuring
+      const validatedColors = (colors && typeof colors === 'object')
+        ? colors
+        : defaultColors
+
+      // 3. Destructure with explicit fallbacks
+      const {
+        dark = defaultColors.dark,
+        light = defaultColors.light,
+        accent = defaultColors.accent
+      } = validatedColors
 
       console.error('[BrandColor] Resolved colors:', { dark, light, accent })
 
@@ -41,7 +50,7 @@ const BrandColorInitializer = ({ property }: BrandColorInitializerProps) => {
 
       console.error('[BrandColor] Colors applied successfully:', result)
     } catch (error) {
-      console.error('[BrandColor] Error:', error)
+      console.error('[BrandColor] Critical Error:', error)
       
       // In case of any error, fall back to default colors
       updateBrandColors({
@@ -51,6 +60,7 @@ const BrandColorInitializer = ({ property }: BrandColorInitializerProps) => {
       })
     }
   }, [property])
+
 
   return null
 }
