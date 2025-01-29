@@ -10,10 +10,14 @@
     "generate-types": "npx supabase gen types typescript --project-id \"urguvlckmcehdiibsiwf\" --schema public > src/types/supabase.ts"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
+    "@emailjs/nodejs": "^5.0.2",
     "@googlemaps/js-api-loader": "^1.16.8",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.5",
+    "@radix-ui/react-popover": "^1.1.5",
+    "@radix-ui/react-slot": "^1.1.1",
     "@react-google-maps/api": "^2.20.5",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.47.10",
@@ -37,12 +41,14 @@
     "nodemailer": "^6.9.16",
     "puppeteer": "^24.1.0",
     "react": "^19.0.0",
+    "react-day-picker": "^8.10.1",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.5",
     "react-hot-toast": "^2.5.1",
     "react-intersection-observer": "^9.14.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.0.3"
   },
   "devDependencies": {

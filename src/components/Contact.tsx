@@ -4,6 +4,11 @@ import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useAgent } from '@/hooks/useAgent'
 import type { Property } from '@/types/property'
+import { Toaster, toast } from 'react-hot-toast'
+import emailjs from '@emailjs/browser'
+
+// Initialize EmailJS
+emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_USER_ID!);
 
 interface ContactProps {
   property: Property
@@ -38,8 +43,104 @@ export function Contact({ property }: ContactProps) {
     return () => observer.disconnect()
   }, [])
 
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    console.log('Submit handler triggered')
+    e.preventDefault()
+    console.log('Default prevented')
+    setIsSubmitting(true)
+
+    try {
+      // First, get the agent's name from the API
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentId: property.agent_id
+        }),
+      })
+
+      const agentData = await response.json()
+      if (!response.ok) {
+        throw new Error(agentData.error || 'Failed to fetch agent information')
+      }
+
+      // Prepare template parameters
+      const templateParams = {
+        to_email: agent?.email,
+        to_name: agentData.firstName,
+        from_name: formData.name,
+        from_email: formData.email,
+        phone: formData.phone,
+        message: formData.message,
+        property_name: property.name,
+        form_type: 'enquiry',
+        subject: 'New Property Enquiry'
+      }
+
+      // Send email using EmailJS client-side
+      await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        templateParams
+      )
+
+      // Show success toast
+      toast.success(
+        'Thank you for your enquiry. We will be in touch soon.',
+        {
+          duration: 15000, // 15 seconds
+          position: 'bottom-center',
+          style: {
+            background: 'var(--brand-light)',
+            color: 'var(--brand-dark)',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }
+      )
+      // Reset form
+      setFormData({ name: '', email: '', phone: '', message: '' })
+    } catch (error) {
+      // Show error toast
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to send enquiry',
+        {
+          duration: 15000,
+          position: 'bottom-center',
+          style: {
+            background: '#FEE2E2',
+            color: '#991B1B',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section id="contact" ref={sectionRef} className="w-full py-12 sm:py-16 px-4 sm:px-6 lg:px-12">
+      <Toaster />
       <div className="max-w-7xl mx-auto h-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
           {/* Agent Details - Left Side */}
@@ -161,7 +262,14 @@ export function Contact({ property }: ContactProps) {
               style={{ backgroundColor: 'rgba(var(--brand-light-rgb), 0.7)' }}
             >
               <h3 className="text-xl sm:text-2xl font-light text-brand-dark mb-4 sm:mb-6">Make an Enquiry</h3>
-              <form className="space-y-4 sm:space-y-6">
+              <form 
+                onSubmit={(e) => {
+                  console.log('Form submission started')
+                  handleSubmit(e)
+                }} 
+                className="space-y-4 sm:space-y-6" 
+                noValidate
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm text-brand-dark mb-2">
@@ -170,8 +278,11 @@ export function Contact({ property }: ContactProps) {
                     <input
                       type="text"
                       id="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
                       className="w-full px-3 sm:px-4 py-2 border border-brand-light rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-dark"
                       placeholder="Enter your name"
+                      required
                     />
                   </div>
                   <div>
@@ -181,8 +292,11 @@ export function Contact({ property }: ContactProps) {
                     <input
                       type="email"
                       id="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
                       className="w-full px-3 sm:px-4 py-2 border border-brand-light rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-dark"
                       placeholder="Enter your email"
+                      required
                     />
                   </div>
                 </div>
@@ -194,8 +308,11 @@ export function Contact({ property }: ContactProps) {
                   <input
                     type="tel"
                     id="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
                     className="w-full px-3 sm:px-4 py-2 border border-brand-light rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-dark"
                     placeholder="Enter your phone number"
+                    required
                   />
                 </div>
 
@@ -206,17 +323,22 @@ export function Contact({ property }: ContactProps) {
                   <textarea
                     id="message"
                     rows={4}
+                    value={formData.message}
+                    onChange={handleInputChange}
                     className="w-full px-3 sm:px-4 py-2 border border-brand-light rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-dark"
                     placeholder="Enter your message"
+                    required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full px-6 sm:px-8 py-3 text-brand-light bg-brand-dark active:translate-y-[3px] transition-all hover:bg-brand-dark/90 rounded-md text-sm sm:text-base"
+                  disabled={isSubmitting}
+                  className={`w-full px-6 sm:px-8 py-3 text-brand-light bg-brand-dark active:translate-y-[3px] transition-all hover:bg-brand-dark/90 rounded-md text-sm sm:text-base ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Send Message
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
+
               </form>
             </div>
           </div>
@@ -224,4 +346,4 @@ export function Contact({ property }: ContactProps) {
       </div>
     </section>
   )
-} 
+}

@@ -50,10 +50,10 @@ export async function POST(request: Request) {
     
     // Create AbortController for timeout
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 120000) // 120 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 25000) // 25 second timeout for Vercel
     
     try {
-      // Call Dify API with timeout
+      // Call Dify API with timeout and streaming enabled
       const response = await fetch('https://api.dify.ai/v1/workflows/run', {
         method: 'POST',
         headers: {
@@ -65,11 +65,10 @@ export async function POST(request: Request) {
             listing_url,
             ...(listing_text && { listing_text }),
           },
-          response_mode: 'blocking',
+          response_mode: 'streaming', // Change to streaming mode
           user
         }),
         signal: controller.signal,
-        // Add keepalive to prevent connection drops
         keepalive: true
       })
 
@@ -79,7 +78,6 @@ export async function POST(request: Request) {
       console.log(`Dify API request completed in ${endTime - startTime}ms`)
       console.log('Dify API response status:', response.status)
       
-      // Handle non-200 responses immediately
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Dify API error response:', errorText)
@@ -89,7 +87,6 @@ export async function POST(request: Request) {
         )
       }
 
-      // Ensure we can read the response body
       if (!response.body) {
         console.error('No response body received from Dify API')
         return NextResponse.json(
@@ -98,31 +95,28 @@ export async function POST(request: Request) {
         )
       }
 
-      const responseText = await response.text()
-      console.log('Dify API response:', responseText)
+      // Handle streaming response
+      const reader = response.body.getReader()
+      let result = ''
 
-      if (!response.ok) {
-        return NextResponse.json(
-          { error: `Failed to scrape property content: ${responseText}` },
-          { status: response.status, headers: corsHeaders }
-        )
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        result += new TextDecoder().decode(value)
       }
 
-      // Parse the response data into a structured format
+      console.log('Dify API response:', result)
+
       try {
-        const data = JSON.parse(responseText)
-        // Check if the response is already in JSON format
+        const data = JSON.parse(result)
         if (data.data?.outputs?.text) {
           try {
-            // Try to parse the text field if it's a JSON string
             const content = JSON.parse(data.data.outputs.text)
             return NextResponse.json(content, { headers: corsHeaders })
           } catch {
-            // If parsing fails, return the text as is
             return NextResponse.json(data.data.outputs, { headers: corsHeaders })
           }
         } else {
-          // If the response doesn't match expected format, return the raw data
           return NextResponse.json(data, { headers: corsHeaders })
         }
       } catch (error) {
@@ -135,13 +129,13 @@ export async function POST(request: Request) {
     } catch (error) {
       clearTimeout(timeoutId)
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error('Request timed out after 120 seconds')
+        console.error('Request timed out after 25 seconds')
         return NextResponse.json(
-          { error: 'Request timed out after 120 seconds' },
+          { error: 'Request timed out after 25 seconds' },
           { status: 524, headers: corsHeaders }
         )
       }
-      throw error // Re-throw other errors to be caught by outer try-catch
+      throw error
     }
   } catch (error) {
     const endTime = Date.now()
