@@ -3,11 +3,10 @@
 import { siteContent } from '@/config/content'
 import { useState } from 'react'
 import { useUpcomingViewing } from '@/hooks/useUpcomingViewing'
-import { useHeroVideo } from '@/hooks/useHeroVideo'
 import { format } from 'date-fns'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { CalendarIcon } from '@heroicons/react/24/outline'
 import type { Property } from '@/types/property'
@@ -45,7 +44,6 @@ export function Viewings({ property }: ViewingsProps) {
     preferredTime: ''
   })
   const { upcomingViewing, loading } = useUpcomingViewing(property.id)
-  const { videoUrl: backgroundVideoUrl } = useHeroVideo(property.id)
 
   // Get current date
   const now = new Date()
@@ -186,66 +184,69 @@ export function Viewings({ property }: ViewingsProps) {
   } : null
 
   return (
-    <section id="viewings" className="relative py-20">
-      {/* Video Background */}
-      <div className="absolute inset-0 overflow-hidden -z-10">
-        {backgroundVideoUrl ? (
-          <video
-            className="absolute h-[100vh] w-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-          >
-            <source src={backgroundVideoUrl} type="video/mp4" />
-          </video>
-        ) : null}
-        <div className="absolute inset-0 bg-black/60" />
-      </div>
-
-      <div className="container mx-auto px-4">
+    <section id="viewings" className="relative py-12 sm:py-16 px-4 sm:px-6 lg:px-12">
+      <div className="max-w-7xl mx-auto">
         <div className="max-w-4xl mx-auto text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">{viewings.title}</h2>
+          <h2 className="text-4xl font-light text-brand-light mb-4">{viewings.title}</h2>
         </div>
 
         {/* Upcoming Viewing Display */}
         {loading ? (
-          <div className="max-w-2xl mx-auto bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-8 text-center">
+          <div className="max-w-2xl mx-auto backdrop-blur-[12px] rounded-lg p-6 mb-8 text-center" style={{ backgroundColor: 'rgba(var(--brand-light-rgb), 0.7)' }}>
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200/20 rounded w-48 mx-auto mb-4"></div>
               <div className="h-6 bg-gray-200/20 rounded w-64 mx-auto"></div>
             </div>
           </div>
         ) : formattedViewing && (
-          <div className="max-w-2xl mx-auto bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-8 text-center">
-            <h3 className="text-2xl font-semibold text-white mb-2">Next Available Viewing</h3>
-            <p className="text-xl text-gray-200">
+          <div className="max-w-2xl mx-auto backdrop-blur-[12px] rounded-lg p-6 mb-8 text-center" style={{ backgroundColor: 'rgba(var(--brand-light-rgb), 0.7)' }}>
+            <h3 className="text-2xl font-light text-brand-dark mb-2">Next Available Viewing</h3>
+            <p className="text-xl text-brand-dark">
               {formattedViewing.date} at {formattedViewing.time}
             </p>
           </div>
         )}
 
         {/* Contact Form */}
-        <div className="max-w-2xl mx-auto bg-white/10 backdrop-blur-sm rounded-lg p-8">
+        <div className="max-w-2xl mx-auto backdrop-blur-[12px] rounded-lg p-8 shadow-lg" style={{ backgroundColor: 'rgba(var(--brand-light-rgb), 0.7)' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-200 mb-2">
-                Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded-md bg-white/20 border border-gray-400 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Your name"
-              />
+            {/* Name and Phone Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-brand-dark mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 rounded-md bg-white/80 border border-gray-300 text-brand-dark placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  placeholder="Your name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-brand-dark mb-2">
+                  Phone *
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  required
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 rounded-md bg-white/80 border border-gray-300 text-brand-dark placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  placeholder="Your phone number"
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-brand-dark mb-2">
                 Email *
               </label>
               <input
@@ -255,138 +256,90 @@ export function Viewings({ property }: ViewingsProps) {
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded-md bg-white/20 border border-gray-400 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 rounded-md bg-white/80 border border-gray-300 text-brand-dark placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary"
                 placeholder="Your email"
               />
             </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-200 mb-2">
-                Phone *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded-md bg-white/20 border border-gray-400 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Your phone number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-200">
-                Preferred Viewing Date and Time *
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal bg-white/20 border-gray-400 text-white hover:text-white hover:bg-white/30',
-                          !formData.preferredDate && 'text-gray-300'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.preferredDate ? format(formData.preferredDate, 'PPP') : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.preferredDate}
-                        onSelect={(date) => setFormData(prev => ({ ...prev, preferredDate: date }))}
-                        initialFocus
-                        disabled={(date) => date < now}
-                        className="bg-white rounded-md"
-                        classNames={{
-                          months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                          month: "space-y-4",
-                          caption: "flex justify-center pt-1 relative items-center",
-                          caption_label: "text-sm font-medium text-gray-900",
-                          nav: "space-x-1 flex items-center",
-                          nav_button: cn(
-                            buttonVariants({ variant: "outline" }),
-                            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border-gray-300 text-gray-700"
-                          ),
-                          nav_button_previous: "absolute left-1",
-                          nav_button_next: "absolute right-1",
-                          table: "w-full border-collapse space-y-1",
-                          head_row: "flex",
-                          head_cell: "text-gray-600 rounded-md w-9 font-normal text-[0.8rem] flex-1 text-center",
-                          row: "flex w-full mt-2",
-                          cell: "text-center text-sm p-0 relative flex-1 [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                          day: cn(
-                            buttonVariants({ variant: "ghost" }),
-                            "h-9 w-9 p-0 font-normal mx-auto aria-selected:opacity-100"
-                          ),
-                          day_range_end: "day-range-end",
-                          day_selected: "bg-blue-600 text-white hover:bg-blue-700 hover:text-white focus:bg-blue-700 focus:text-white rounded-md",
-                          day_today: "bg-gray-100 text-gray-900 rounded-md",
-                          day_outside: "text-gray-500 opacity-50",
-                          day_disabled: "text-gray-400 opacity-50",
-                          day_hidden: "invisible"
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div>
-                  <select
-                    name="preferredTime"
-                    value={formData.preferredTime}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 rounded-md bg-white/20 border border-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="" className="bg-gray-800">Select a time</option>
-                    {timeSlots.map((time) => (
-                      <option key={time} value={time} className="bg-gray-800">
-                        {time}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            {/* Date and Time Grid - Always side by side */}
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="preferredDate" className="block text-sm font-medium text-brand-dark mb-2">
+                  Preferred Date *
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-white/80 border border-gray-300 text-brand-dark hover:bg-white/90 h-[42px] px-4",
+                        !formData.preferredDate && "text-gray-500"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.preferredDate ? format(formData.preferredDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.preferredDate}
+                      onSelect={(date) => setFormData(prev => ({ ...prev, preferredDate: date }))}
+                      disabled={(date) => date < now}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-              <p className="text-sm text-gray-300">
-                All viewing times are local to the property&apos;s location
-              </p>
+
+              <div>
+                <label htmlFor="preferredTime" className="block text-sm font-medium text-brand-dark mb-2">
+                  Preferred Time *
+                </label>
+                <select
+                  id="preferredTime"
+                  name="preferredTime"
+                  required
+                  value={formData.preferredTime}
+                  onChange={handleInputChange}
+                  className="w-full px-4 h-[42px] rounded-md bg-white/80 border border-gray-300 text-brand-dark placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  <option value="">Select a time</option>
+                  {timeSlots.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-200 mb-2">
-                Message (Optional)
+              <label htmlFor="message" className="block text-sm font-medium text-brand-dark mb-2">
+                Message
               </label>
               <textarea
                 id="message"
                 name="message"
+                rows={4}
                 value={formData.message}
                 onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-2 rounded-md bg-white/20 border border-gray-400 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 rounded-md bg-white/80 border border-gray-300 text-brand-dark placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary"
                 placeholder="Any additional information..."
               />
             </div>
 
             {submitStatus && (
-              <div className={`p-4 rounded-md ${submitStatus.type === 'success' ? 'bg-green-600/20' : 'bg-red-600/20'}`}>
-                <p className="text-sm text-white">{submitStatus.message}</p>
+              <div className={`p-4 rounded-md ${submitStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {submitStatus.message}
               </div>
             )}
 
-            <div className="text-center">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Sending...' : 'Request Viewing'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full px-6 py-3 rounded-md bg-brand-dark text-brand-light hover:bg-brand-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isSubmitting ? 'Submitting...' : 'Request Viewing'}
+            </button>
           </form>
         </div>
       </div>

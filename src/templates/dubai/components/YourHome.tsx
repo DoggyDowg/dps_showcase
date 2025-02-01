@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { ParallaxBanner } from './shared/ParallaxBanner'
-import { HomeGallery } from './HomeGallery'
+import { ParallaxBanner } from '@/components/shared/ParallaxBanner'
+import { HomeGallery } from '@/components/HomeGallery'
 import { useFeaturesBanner } from '@/hooks/useFeaturesBanner'
 import { useYourHomeImage } from '@/hooks/useYourHomeImage'
+import { DynamicImage } from '@/components/shared/DynamicImage'
 import type { Property } from '@/types/property'
 
 interface YourHomeProps {
@@ -17,8 +18,8 @@ export function YourHome({ property }: YourHomeProps) {
   const featuresRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [isFeaturesVisible, setIsFeaturesVisible] = useState(false)
-  const { imageUrl: bannerUrl, loading: bannerLoading } = useFeaturesBanner(property.id)
-  const { imageUrl: homeImageUrl, loading: homeImageLoading } = useYourHomeImage(property.id)
+  const { imageUrl: bannerUrl, loading: bannerLoading } = useFeaturesBanner(property.id, property.is_demo)
+  const { imageUrl: homeImageUrl, loading: homeImageLoading } = useYourHomeImage(property.id, property.is_demo)
 
   // Use the property data from Supabase
   const { content } = property
@@ -71,7 +72,7 @@ export function YourHome({ property }: YourHomeProps) {
   }, [])
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col overflow-x-hidden">
       <div id="features">
         <ParallaxBanner
           imageSrc={bannerUrl || '/images/banners/yourhome.jpg'}
@@ -81,7 +82,7 @@ export function YourHome({ property }: YourHomeProps) {
       </div>
 
       {/* Content Section */}
-      <section className="pt-20 pb-20 px-6 sm:px-8 lg:px-12 bg-brand-light">
+      <section className="pt-20 pb-40 px-6 sm:px-8 lg:px-12 bg-brand-light">
         <div className="max-w-7xl mx-auto">
           {/* Main Content Grid */}
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -110,7 +111,7 @@ export function YourHome({ property }: YourHomeProps) {
               {homeImageLoading ? (
                 <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
               ) : homeImageUrl ? (
-                <Image
+                <DynamicImage
                   src={homeImageUrl}
                   alt="Your Home Feature"
                   fill
@@ -118,7 +119,7 @@ export function YourHome({ property }: YourHomeProps) {
                   priority
                 />
               ) : (
-                <Image
+                <DynamicImage
                   src="/images/sections/yourhome/yourhome.jpg"
                   alt="Your Home Feature"
                   fill
@@ -132,44 +133,45 @@ export function YourHome({ property }: YourHomeProps) {
 
       {/* Gallery Section */}
       <section className="relative bg-brand-dark">
-        {/* Background Image (Blurred) */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-xl"
-          style={{ 
-            backgroundImage: `url(${homeImageUrl || '/images/sections/yourhome/yourhome.jpg'})`,
-            opacity: 0.5,
-            transform: 'scale(1.1)'
-          }}
-        />
-        
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-brand-dark/70" />
+        <div className="relative w-full px-12 py-16">
+          {/* Background Image (Blurred) */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-xl transform scale-110"
+            style={{ 
+              backgroundImage: `url(${homeImageUrl || '/images/sections/yourhome/yourhome.jpg'})`,
+              opacity: 0.5
+            }}
+          />
+          
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-brand-dark/70" />
 
-        {/* Content */}
-        <div className="relative z-10 px-12 py-16">
-          {/* Features Grid */}
-          <div ref={featuresRef} className="max-w-7xl mx-auto mb-8">
-            <h4 className="text-2xl font-light mb-4 text-brand-light text-center">Home Highlights</h4>
-            <div className="flex flex-wrap justify-center gap-3">
-              {features.items?.filter(item => item.feature?.trim()).map((feature, index) => (
-                <div 
-                  key={index}
-                  className="[background-color:rgb(var(--brand-light)/0.1)] [border-color:rgb(var(--brand-light)/0.2)] backdrop-blur-sm px-4 py-2 rounded-full shadow-sm text-brand-light text-center font-light border inline-block text-sm transition-all duration-800"
-                  style={{ 
-                    opacity: isFeaturesVisible ? 1 : 0,
-                    transform: `translateY(${isFeaturesVisible ? '0' : '20px'})`,
-                    transitionDelay: `${index * 100}ms`
-                  }}
-                >
-                  {feature.feature}
-                </div>
-              ))}
+          {/* Content */}
+          <div className="relative z-10">
+            {/* Features Grid */}
+            <div ref={featuresRef} className="max-w-7xl mx-auto mb-8">
+              <h4 className="text-2xl font-light mb-4 text-brand-light text-center">Home Highlights</h4>
+              <div className="flex flex-wrap justify-center gap-3">
+                {features.items?.filter(item => item.feature?.trim()).map((feature, index) => (
+                  <div 
+                    key={index}
+                    className="[background-color:rgb(var(--brand-light)/0.1)] [border-color:rgb(var(--brand-light)/0.2)] backdrop-blur-sm px-4 py-2 rounded-full shadow-sm text-brand-light text-center font-light border inline-block text-sm transition-all duration-800"
+                    style={{ 
+                      opacity: isFeaturesVisible ? 1 : 0,
+                      transform: `translateY(${isFeaturesVisible ? '0' : '20px'})`,
+                      transitionDelay: `${index * 100}ms`
+                    }}
+                  >
+                    {feature.feature}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Gallery */}
-          <div className="max-w-7xl mx-auto">
-            <HomeGallery property={property} />
+            {/* Gallery */}
+            <div className="max-w-7xl mx-auto">
+              <HomeGallery property={property} />
+            </div>
           </div>
         </div>
       </section>

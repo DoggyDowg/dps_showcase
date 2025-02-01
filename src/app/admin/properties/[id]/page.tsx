@@ -24,6 +24,7 @@ const initialProperty: Omit<Property, 'id'> = {
   updated_at: new Date().toISOString(),
   name: '',
   is_demo: false,
+  template_name: 'dubai',
   street_address: '',
   suburb: '',
   state: '',
@@ -283,7 +284,7 @@ function PropertyEditContent({ id }: { id: string }) {
 
   // Handle basic property info updates
   const handlePropertyChange = (
-    field: keyof Omit<Property, 'id' | 'created_at' | 'updated_at' | 'content' | 'metadata'>,
+    field: keyof Omit<Property, 'id' | 'created_at' | 'updated_at' | 'content' | 'metadata' | 'agency_settings'>,
     value: string | boolean
   ) => {
     setProperty(prev => ({
@@ -393,6 +394,7 @@ function PropertyEditContent({ id }: { id: string }) {
         content: property.content,
         metadata: property.metadata,
         is_demo: property.is_demo,
+        template_name: property.template_name,
         updated_at: new Date().toISOString()
       }
 
@@ -885,6 +887,20 @@ function PropertyEditContent({ id }: { id: string }) {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
+                      <label htmlFor="template" className="block text-sm font-medium mb-1">
+                        Template <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="template"
+                        value={property.template_name}
+                        onChange={(e) => handlePropertyChange('template_name', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="dubai">Dubai</option>
+                        <option value="cusco">Cusco</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium mb-1">
                         Suburb <span className="text-red-500">*</span>
                       </label>
@@ -935,27 +951,28 @@ function PropertyEditContent({ id }: { id: string }) {
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Price</label>
-                      <input
-                        type="text"
-                        value={property.price}
-                        onChange={(e) => handlePropertyChange('price', e.target.value)}
-                        className="w-full p-2 border rounded"
-                        placeholder="e.g., $1,500,000"
-                      />
-                    </div>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Status</label>
                       <select
                         value={property.status}
                         onChange={(e) => handlePropertyChange('status', e.target.value)}
-                        className="w-full p-2 border rounded"
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                       >
                         <option value="draft">Draft</option>
                         <option value="published">Published</option>
                         <option value="archived">Archived</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Template</label>
+                      <select
+                        value={property.template_name}
+                        onChange={(e) => handlePropertyChange('template_name', e.target.value)}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                      >
+                        <option value="cusco">Cusco</option>
+                        <option value="dubai">Dubai</option>
                       </select>
                     </div>
                   </div>
@@ -1631,11 +1648,8 @@ function PropertyEditContent({ id }: { id: string }) {
           <div className="bg-white rounded-lg shadow p-6">
             <PropertyAssets 
               propertyId={id} 
-              onSave={() => {
-                // Show success message in the parent's error/success handling system
-                setError(null)
-                setSaving(false)
-              }} 
+              onSave={() => setProperty(prev => ({ ...prev, updated_at: new Date().toISOString() }))}
+              is_demo={property.is_demo}
             />
           </div>
         )}

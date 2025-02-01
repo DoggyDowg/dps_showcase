@@ -97,6 +97,7 @@ export interface Property {
   updated_at: string
   name: string
   is_demo: boolean
+  template_name: 'dubai' | 'cusco'
   street_address: string
   suburb: string
   state: string

@@ -49,7 +49,7 @@ export function ParallaxBanner({ imageSrc, title, loading }: ParallaxBannerProps
       ) : (
         <div 
           ref={imageRef} 
-          className="absolute -top-[150px] left-0 right-0 h-[460px]"
+          className="absolute -top-[150px] left-0 right-0 h-[460px] overflow-hidden"
         >
           <Image
             src={imageSrc}
@@ -63,9 +63,9 @@ export function ParallaxBanner({ imageSrc, title, loading }: ParallaxBannerProps
         </div>
       )}
       <div className="absolute inset-0 bg-brand-dark/50" />
-      <div className="relative h-full max-w-7xl mx-auto px-4 flex items-center justify-center">
+      <div className="relative h-full max-w-7xl mx-auto px-4 flex items-center justify-center overflow-hidden">
         <h2 className="text-4xl font-light text-brand-light">{title}</h2>
       </div>
     </div>
   )
-} 
+}

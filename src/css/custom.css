@@ -1,0 +1,6 @@
+@layer components {
+  .force-padding {
+    padding-bottom: 80px !important;
+    height: auto !important;
+  }
+} 

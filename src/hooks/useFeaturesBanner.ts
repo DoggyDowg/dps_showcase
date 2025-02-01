@@ -1,63 +1,45 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getAssetUrl } from '@/utils/getAssetUrl'
 
-export function useFeaturesBanner(propertyId?: string) {
+export function useFeaturesBanner(propertyId: string, isDemo?: boolean) {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
-    async function loadImage() {
-      if (!propertyId) {
-        console.log('No propertyId provided')
-        setLoading(false)
-        return
-      }
-
-      try {
-        setLoading(true)
-        setError(null)
-        console.log('Fetching features banner for property:', propertyId)
-
-        const { data, error } = await supabase
-          .from('assets')
-          .select('storage_path')
-          .eq('property_id', propertyId)
-          .eq('category', 'features_banner')
-          .single()
-
-        if (error) {
-          console.error('Supabase error:', error)
-          throw error
-        }
-
-        console.log('Asset data:', data)
-
-        if (data?.storage_path) {
-          // Get the public URL for the asset
-          const { data: publicUrlData } = supabase
-            .storage
-            .from('property-assets')
-            .getPublicUrl(data.storage_path)
-
-          console.log('Public URL:', publicUrlData)
-          setImageUrl(publicUrlData.publicUrl)
-        } else {
-          console.log('No features banner found for property')
-        }
-      } catch (err) {
-        console.error('Detailed error:', err)
-        setError(err instanceof Error ? err : new Error('Failed to load features banner'))
-      } finally {
-        setLoading(false)
-      }
+    if (isDemo) {
+      // For demo properties, use the demo features banner
+      const demoUrl = getAssetUrl({
+        propertyId,
+        isDemo: true,
+        category: 'features_banner',
+        filename: 'features.jpg'
+      })
+      setImageUrl(demoUrl)
+      setLoading(false)
+    } else {
+      // For live properties, fetch from the property's assets
+      fetch(`/api/properties/${propertyId}/assets?category=features_banner`)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            setImageUrl(getAssetUrl({
+              propertyId,
+              isDemo: false,
+              category: 'features_banner',
+              filename: data[0].filename
+            }))
+          }
+          setLoading(false)
+        })
+        .catch(error => {
+          console.error('Error fetching features banner:', error)
+          setImageUrl(null)
+          setLoading(false)
+        })
     }
+  }, [propertyId, isDemo])
 
-    loadImage()
-  }, [supabase, propertyId])
-
-  return { imageUrl, loading, error }
+  return { imageUrl, loading }
 } 

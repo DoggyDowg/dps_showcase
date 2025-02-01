@@ -1,14 +1,33 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
+import { useGesture } from '@/hooks/useGesture'
 import styles from '@/styles/HeaderLink.module.css'
 
 interface HeaderLinkProps {
   href: string
   children: React.ReactNode
   className?: string
-  onClick?: () => void
 }
 
-export function HeaderLink({ href, children, className, onClick }: HeaderLinkProps) {
+export function HeaderLink({ href, children, className = '' }: HeaderLinkProps) {
+  const [isPressed, setIsPressed] = useState(false)
+  
+  const gestureRef = useGesture({
+    onPress: () => setIsPressed(true),
+    onPressUp: () => setIsPressed(false),
+    onTap: () => {
+      // Smooth scroll for anchor links
+      if (href.startsWith('#')) {
+        const element = document.querySelector(href)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      }
+    }
+  })
+
   const isHashLink = href.startsWith('#')
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -19,7 +38,6 @@ export function HeaderLink({ href, children, className, onClick }: HeaderLinkPro
         element.scrollIntoView({ behavior: 'smooth' })
       }
     }
-    onClick?.()
   }
 
   const linkClassName = `${styles.link} ${className || ''}`
@@ -33,7 +51,20 @@ export function HeaderLink({ href, children, className, onClick }: HeaderLinkPro
   }
 
   return (
-    <Link href={href} className={linkClassName} onClick={onClick}>
+    <Link
+      href={href}
+      ref={gestureRef as any}
+      className={`
+        relative text-brand-light hover:text-brand-light/80 transition-colors
+        after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full 
+        after:h-[2px] after:bg-brand-light after:scale-x-0 after:origin-right
+        after:transition-transform hover:after:scale-x-100 hover:after:origin-left
+        active:text-brand-light/60
+        ${isPressed ? 'scale-95' : 'scale-100'}
+        transition-transform duration-150
+        ${linkClassName}
+      `}
+    >
       {children}
     </Link>
   )

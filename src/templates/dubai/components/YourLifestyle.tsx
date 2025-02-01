@@ -1,8 +1,8 @@
 'use client'
 
-import { ParallaxBanner } from './shared/ParallaxBanner'
-import { MasonryGallery } from './shared/MasonryGallery'
-import { ShareButtons } from './shared/ShareButtons'
+import { ParallaxBanner } from '@/components/shared/ParallaxBanner'
+import { MasonryGallery } from '@/components/shared/MasonryGallery'
+import { ShareButtons } from '@/components/shared/ShareButtons'
 import { useLifestyleBanner } from '@/hooks/useLifestyleBanner'
 import { useGalleryImages } from '@/hooks/useGalleryImages'
 import type { Property } from '@/types/property'

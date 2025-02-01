@@ -12,7 +12,7 @@ export function Hero({ property }: HeroProps) {
   const { videoUrl } = useHeroVideo(property.id)
 
   return (
-    <section className="relative h-screen w-full">
+    <section className="relative h-screen w-full overflow-x-hidden">
       {/* Video Background */}
       <div className="absolute inset-0 overflow-hidden -z-10">
         {videoUrl ? (
@@ -22,14 +22,17 @@ export function Hero({ property }: HeroProps) {
             muted
             loop
             playsInline
-            style={{ position: 'fixed', top: 0, left: 0, zIndex: -30 }}
+            style={{ position: 'fixed', top: 0, left: 0, zIndex: -2 }}
           >
             <source src={videoUrl} type="video/mp4" />
           </video>
         ) : (
           <div className="absolute inset-0 bg-brand-dark" />
         )}
-        <div className="absolute inset-0 bg-brand-dark/70" style={{ position: 'fixed', top: 0, left: 0, zIndex: -20 }} />
+        <div 
+          className="absolute inset-0 bg-black/50" 
+          style={{ position: 'fixed', top: 0, left: 0, zIndex: -1 }} 
+        />
       </div>
 
       {/* Content */}

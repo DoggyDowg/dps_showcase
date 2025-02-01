@@ -3,6 +3,8 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import { getImageWithFallback } from '@/utils/imageUtils'
+import { getAssetUrl } from '@/utils/getAssetUrl'
+import type { AssetCategory } from '@/types/assets'
 
 interface DynamicImageProps {
   src: string          // Base path without extension (e.g., '/images/gallery/photo1')
@@ -12,6 +14,11 @@ interface DynamicImageProps {
   fill?: boolean
   className?: string
   priority?: boolean
+  // New props for asset URLs
+  propertyId?: string
+  isDemo?: boolean
+  category?: AssetCategory
+  filename?: string
 }
 
 export function DynamicImage({
@@ -22,12 +29,21 @@ export function DynamicImage({
   fill = false,
   className = '',
   priority = false,
+  propertyId,
+  isDemo,
+  category,
+  filename,
 }: DynamicImageProps) {
   const [error, setError] = useState(false)
 
+  // If propertyId and category are provided, use the asset URL system
+  const actualSrc = propertyId && category && filename
+    ? getAssetUrl({ propertyId, isDemo, category, filename })
+    : src
+
   // Check if the URL is a Supabase URL
-  const isSupabaseUrl = src.includes('supabase.co') || src.includes('supabase.in')
-  const srcSet = isSupabaseUrl ? [src] : getImageWithFallback(src)
+  const isSupabaseUrl = actualSrc.includes('supabase.co') || actualSrc.includes('supabase.in')
+  const srcSet = isSupabaseUrl ? [actualSrc] : getImageWithFallback(actualSrc)
   const [currentSrcIndex, setCurrentSrcIndex] = useState(0)
 
   const handleError = () => {

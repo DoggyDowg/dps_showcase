@@ -26,8 +26,23 @@ interface HeaderProps {
 
 export function Header({ property }: HeaderProps) {
   const [mounted, setMounted] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { logoUrl } = usePropertyLogo(property.id)
+
+  // Handle scroll behavior
+  useEffect(() => {
+    let lastScrollY = window.scrollY
+    
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      setIsVisible(currentScrollY <= 0 || currentScrollY < lastScrollY)
+      lastScrollY = currentScrollY
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Get custom menu items from agency settings or use defaults
   const menuItems = useMemo(() => {
@@ -84,7 +99,7 @@ export function Header({ property }: HeaderProps) {
   }
   
   return (
-    <header className={`${styles.header} relative z-[100]`}>
+    <header className={`${styles.header} ${isVisible ? styles.visible : ''} relative z-[100]`}>
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="flex justify-between items-center h-20">
           <div className="flex-shrink-0 min-w-0 max-w-[160px] sm:max-w-[200px] h-20 flex items-center">

@@ -2,7 +2,8 @@
 
 import { useProperty } from '@/hooks/useProperty'
 import { Header } from '@/components/Header'
-import { Hero } from '@/components/Hero'
+import { Hero as CuscoHero } from '@/components/Hero'
+import { Hero as DubaiHero } from '@/templates/dubai/components/Hero'
 import { YourHome } from '@/components/YourHome'
 import { YourLifestyle } from '@/components/YourLifestyle'
 import { YourNeighbourhood } from '@/components/YourNeighbourhood'
@@ -15,11 +16,12 @@ import { Contact } from '@/components/Contact'
 import CustomChat from '@/components/shared/CustomChat'
 import LoadingScreen from '@/components/shared/LoadingScreen'
 
-interface ShowcaseTemplateProps {
+interface CuscoTemplateProps {
   propertyId: string
+  templateStyle?: 'cusco' | 'dubai' // Add template style prop
 }
 
-export function ShowcaseTemplate({ propertyId }: ShowcaseTemplateProps) {
+export function CuscoTemplate({ propertyId, templateStyle = 'cusco' }: CuscoTemplateProps) {
   const { property, loading, error } = useProperty(propertyId)
 
   if (error) {
@@ -44,12 +46,15 @@ export function ShowcaseTemplate({ propertyId }: ShowcaseTemplateProps) {
     )
   }
 
+  // Select Hero component based on template style
+  const HeroComponent = templateStyle === 'dubai' ? DubaiHero : CuscoHero
+
   return (
     <ClientLayout property={property}>
       {property.is_demo && <LoadingScreen />}
-      <main className="min-h-screen">
+      <main className="min-h-screen overflow-x-hidden">
         <Header property={property} />
-        <Hero property={property} />
+        <HeroComponent property={property} />
         <TransitionGallery property={property} />
         <YourHome property={property} />
         <YourLifestyle property={property} />
@@ -62,4 +67,4 @@ export function ShowcaseTemplate({ propertyId }: ShowcaseTemplateProps) {
       </main>
     </ClientLayout>
   )
-} 
+}
