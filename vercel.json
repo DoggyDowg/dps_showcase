@@ -13,7 +13,8 @@
       "src": "package.json",
       "use": "@vercel/next",
       "config": {
-        "zeroConfig": true
+        "zeroConfig": true,
+        "installCommand": "npm install --legacy-peer-deps"
       }
     }
   ],
