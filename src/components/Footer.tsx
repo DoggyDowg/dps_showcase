@@ -11,7 +11,7 @@ interface FooterProps {
 }
 
 export function Footer({ property }: FooterProps) {
-  const { imageUrl, loading } = useFooterImage(property.id)
+  const { imageUrl, loading } = useFooterImage(property.id, property.is_demo)
   
   // Find all links
   const phoneLink = property.footer_links?.find((link: FooterLink) => link.id === 'phone')

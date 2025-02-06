@@ -1,7 +1,7 @@
 'use client'
 
 import { siteContent } from '@/config/content'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUpcomingViewing } from '@/hooks/useUpcomingViewing'
 import { format } from 'date-fns'
 import { Calendar } from '@/components/ui/calendar'
@@ -33,6 +33,10 @@ interface AgentData {
   email: string;
 }
 
+interface Viewing {
+  viewing_datetime: string;
+}
+
 export function Viewings({ property }: ViewingsProps) {
   const { viewings } = siteContent
   const [formData, setFormData] = useState<FormData>({
@@ -43,7 +47,20 @@ export function Viewings({ property }: ViewingsProps) {
     preferredDate: undefined,
     preferredTime: ''
   })
-  const { upcomingViewing, loading } = useUpcomingViewing(property.id)
+  const { upcomingViewing: fetchedViewing, loading } = useUpcomingViewing(property.id)
+  const [demoViewing, setDemoViewing] = useState<Viewing | null>(null)
+
+  // Set up demo viewing if needed
+  useEffect(() => {
+    if (property.is_demo) {
+      setDemoViewing({
+        viewing_datetime: new Date('2026-03-08T09:30:00').toISOString()
+      })
+    }
+  }, [property.is_demo])
+
+  // Use demo viewing if it's a demo property, otherwise use fetched viewing
+  const upcomingViewing = property.is_demo ? demoViewing : fetchedViewing
 
   // Get current date
   const now = new Date()

@@ -1,11 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { HeaderLink } from '@/components/shared/HeaderLink'
 import { MobileMenu } from '@/components/shared/MobileMenu'
 import { usePropertyLogo } from '@/hooks/usePropertyLogo'
+import { TrackedImage } from '@/components/shared/AssetTracker'
 import styles from '@/styles/Header.module.css'
 import type { Property } from '@/types/property'
 
@@ -56,7 +56,7 @@ export function Header({ property }: HeaderProps) {
           <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
             <Link href="/" prefetch={false} className="block">
               {logoUrl ? (
-                <Image
+                <TrackedImage
                   src={logoUrl}
                   alt={`${property.agency_name} Logo`}
                   width={MAX_LOGO_WIDTH}

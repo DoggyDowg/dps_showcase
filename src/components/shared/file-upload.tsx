@@ -8,9 +8,20 @@ interface FileUploadProps {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   isDarkBg?: boolean;
   isFont?: boolean;
+  disabled?: boolean;
+  helperText?: string;
 }
 
-export function FileUpload({ label, accept, value, onChange, isDarkBg, isFont }: FileUploadProps) {
+export function FileUpload({ 
+  label, 
+  accept, 
+  value, 
+  onChange, 
+  isDarkBg, 
+  isFont,
+  disabled,
+  helperText 
+}: FileUploadProps) {
   const [imageExists, setImageExists] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
 
@@ -59,13 +70,19 @@ export function FileUpload({ label, accept, value, onChange, isDarkBg, isFont }:
         type="file"
         accept={accept}
         onChange={onChange}
-        className="w-full p-2 border rounded text-sm text-gray-500
+        disabled={disabled}
+        className={`w-full p-2 border rounded text-sm
           file:mr-4 file:py-2 file:px-4
           file:rounded-full file:border-0
           file:text-sm file:font-semibold
-          file:bg-blue-50 file:text-blue-700
-          hover:file:bg-blue-100"
+          ${disabled 
+            ? 'bg-gray-50 cursor-not-allowed border-gray-200 file:bg-gray-100 file:text-gray-500 file:cursor-not-allowed' 
+            : 'text-gray-500 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
+          }`}
       />
+      {helperText && (
+        <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+      )}
       {imageExists && (
         <div className={`mt-3 p-4 rounded-lg border ${isDarkBg ? 'bg-gray-900' : 'bg-gray-50'}`}>
           <div className="flex justify-center">

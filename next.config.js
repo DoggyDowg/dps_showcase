@@ -10,8 +10,13 @@ const nextConfig = {
     return config
   },
   images: {
-    domains: [
-      'urguvlckmcehdiibsiwf.supabase.co'
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'urguvlckmcehdiibsiwf.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 }

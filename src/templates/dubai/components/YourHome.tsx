@@ -6,7 +6,6 @@ import { ParallaxBanner } from '@/components/shared/ParallaxBanner'
 import { HomeGallery } from '@/components/HomeGallery'
 import { useFeaturesBanner } from '@/hooks/useFeaturesBanner'
 import { useYourHomeImage } from '@/hooks/useYourHomeImage'
-import { DynamicImage } from '@/components/shared/DynamicImage'
 import type { Property } from '@/types/property'
 
 interface YourHomeProps {
@@ -18,8 +17,8 @@ export function YourHome({ property }: YourHomeProps) {
   const featuresRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [isFeaturesVisible, setIsFeaturesVisible] = useState(false)
-  const { imageUrl: bannerUrl, loading: bannerLoading } = useFeaturesBanner(property.id, property.is_demo)
-  const { imageUrl: homeImageUrl, loading: homeImageLoading } = useYourHomeImage(property.id, property.is_demo)
+  const { imageUrl: bannerUrl, loading: bannerLoading } = useFeaturesBanner(property.id)
+  const { imageUrl: homeImageUrl, loading: homeImageLoading } = useYourHomeImage(property.id)
 
   // Use the property data from Supabase
   const { content } = property
@@ -111,7 +110,7 @@ export function YourHome({ property }: YourHomeProps) {
               {homeImageLoading ? (
                 <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
               ) : homeImageUrl ? (
-                <DynamicImage
+                <Image
                   src={homeImageUrl}
                   alt="Your Home Feature"
                   fill
@@ -119,7 +118,7 @@ export function YourHome({ property }: YourHomeProps) {
                   priority
                 />
               ) : (
-                <DynamicImage
+                <Image
                   src="/images/sections/yourhome/yourhome.jpg"
                   alt="Your Home Feature"
                   fill

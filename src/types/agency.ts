@@ -31,6 +31,7 @@ export interface Agency {
       dark?: string;
       light?: string;
     };
+    favicon?: string;
     typography?: {
       headingFont?: {
         url: string;

@@ -49,7 +49,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
     triggerOnce: true,
     rootMargin: '-50px 0px'
   })
-  const { images, loading, error } = useGalleryImages(property.id)
+  const { images, loading, error } = useGalleryImages(property.id, property.is_demo)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
 
   // Add debugging logs

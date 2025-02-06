@@ -53,6 +53,7 @@ export interface AgencyBranding {
     light: string
     accent: string
   }
+  favicon?: string
   typography: {
     bodyFont: {
       url: string
@@ -146,6 +147,7 @@ export interface Property {
         light: string
         accent: string
       }
+      favicon?: string
       typography: {
         bodyFont: {
           url: string

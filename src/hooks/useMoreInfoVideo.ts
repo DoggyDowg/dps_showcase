@@ -1,13 +1,18 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-export function useMoreInfoVideo(propertyId?: string) {
+export function useMoreInfoVideo(propertyId?: string, isDemoProperty?: boolean) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const supabase = createClientComponentClient()
 
   useEffect(() => {
+    let isMounted = true
+    const abortController = new AbortController()
+
     async function loadVideo() {
       if (!propertyId) {
         console.log('No propertyId provided')
@@ -19,75 +24,103 @@ export function useMoreInfoVideo(propertyId?: string) {
         setLoading(true)
         setError(null)
 
-        // First try to get more_info_video
-        console.log('Fetching more info video for property:', propertyId)
-        const { data: moreInfoVideo, error: moreInfoError } = await supabase
-          .from('assets')
-          .select('storage_path')
-          .eq('property_id', propertyId)
-          .eq('category', 'more_info_video')
-          .eq('status', 'active')
-          .single()
-
-        // If we found a more_info_video, use that
-        if (!moreInfoError && moreInfoVideo?.storage_path) {
-          const { data: publicUrlData } = supabase
-            .storage
-            .from('property-assets')
-            .getPublicUrl(moreInfoVideo.storage_path)
-
-          console.log('More info video public URL:', publicUrlData)
-          setVideoUrl(publicUrlData.publicUrl)
-          return
-        }
-
-        // If no more_info_video found (or error), try hero_video
-        if (moreInfoError?.code === 'PGRST116' || !moreInfoVideo) {
-          console.log('No more info video found, trying hero video')
-          const { data: heroVideo, error: heroError } = await supabase
-            .from('assets')
-            .select('storage_path')
-            .eq('property_id', propertyId)
-            .eq('category', 'hero_video')
-            .eq('status', 'active')
-            .single()
-
-          if (!heroError && heroVideo?.storage_path) {
+        // If it's a demo property, use the demo video
+        if (isDemoProperty) {
+          console.log('Loading demo video')
+          const supportedFormats = ['mp4', 'webm'] // Common video formats
+          let foundVideo = false
+          
+          for (const format of supportedFormats) {
             const { data: publicUrlData } = supabase
               .storage
               .from('property-assets')
-              .getPublicUrl(heroVideo.storage_path)
+              .getPublicUrl(`demo/hero_video/hero.${format}`)
 
-            console.log('Hero video public URL:', publicUrlData)
-            setVideoUrl(publicUrlData.publicUrl)
-            return
+            // Verify if the video exists
+            try {
+              const response = await fetch(publicUrlData.publicUrl, { 
+                method: 'HEAD',
+                signal: abortController.signal
+              })
+              if (response.ok) {
+                console.log(`Found demo video in ${format} format`)
+                if (isMounted) {
+                  setVideoUrl(publicUrlData.publicUrl)
+                }
+                foundVideo = true
+                break
+              }
+            } catch (err) {
+              console.log(`No ${format} format found for demo video:`, err)
+            }
           }
 
-          if (heroError?.code === 'PGRST116') {
-            console.log('No hero video found either')
-            setVideoUrl(null)
-            return
+          if (!foundVideo) {
+            console.error('No supported video format found for demo video')
+            if (isMounted) {
+              setVideoUrl(null)
+            }
           }
-
-          if (heroError) throw heroError
+          if (isMounted) {
+            setLoading(false)
+          }
+          return
         }
 
-        // If we got here with a non-PGRST116 error, throw it
-        if (moreInfoError?.code !== 'PGRST116') throw moreInfoError
+        // Otherwise, query the assets table for a real property
+        console.log('Fetching video for property:', propertyId)
+        const { data, error } = await supabase
+          .from('assets')
+          .select('storage_path')
+          .eq('property_id', propertyId)
+          .eq('category', 'hero_video')
+          .eq('status', 'active')
+          .single()
 
-        // If we got here with no video, set to null
-        setVideoUrl(null)
+        if (error) {
+          if (error.code === 'PGRST116') {
+            console.log('No video found for property')
+            if (isMounted) {
+              setVideoUrl(null)
+            }
+            return
+          }
+          throw error
+        }
+
+        if (data?.storage_path) {
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('property-assets')
+            .getPublicUrl(data.storage_path)
+
+          if (isMounted) {
+            setVideoUrl(publicUrlData.publicUrl)
+          }
+        } else {
+          if (isMounted) {
+            setVideoUrl(null)
+          }
+        }
       } catch (err) {
         console.error('Error loading video:', err)
-        setError(err instanceof Error ? err : new Error('Failed to load video'))
-        setVideoUrl(null)
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Failed to load video'))
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     loadVideo()
-  }, [propertyId, supabase])
+
+    return () => {
+      isMounted = false
+      abortController.abort()
+    }
+  }, [supabase, propertyId, isDemoProperty])
 
   return { videoUrl, loading, error }
 } 

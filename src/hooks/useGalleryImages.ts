@@ -2,21 +2,27 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Asset } from '@/types/assets'
 
-export interface GalleryImage {
+interface GalleryImage {
+  id: string
   src: string
   alt: string
-  id: string
 }
 
-export function useGalleryImages(propertyId?: string) {
+const BATCH_SIZE = 8
+const TOTAL_DEMO_IMAGES = 12
+const SUPPORTED_FORMATS = ['webp', 'jpg'] // Reduced to most efficient formats
+
+export function useGalleryImages(propertyId?: string, isDemoProperty?: boolean) {
   const [images, setImages] = useState<GalleryImage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const supabase = createClientComponentClient()
 
   useEffect(() => {
+    let isMounted = true
+    const abortController = new AbortController()
+
     async function loadImages() {
       if (!propertyId) {
         console.log('No propertyId provided')
@@ -27,54 +33,112 @@ export function useGalleryImages(propertyId?: string) {
       try {
         setLoading(true)
         setError(null)
-        console.log('Fetching gallery images for property:', propertyId)
 
-        const { data, error } = await supabase
-          .from('assets')
-          .select('*')
-          .eq('property_id', propertyId)
-          .eq('category', 'gallery')
-          .order('display_order', { ascending: true })
+        // If it's a demo property, generate demo gallery images
+        if (isDemoProperty) {
+          console.log('Loading demo gallery images')
 
-        if (error) {
-          console.error('Supabase error:', error)
-          throw error
-        }
+          // Load images in batches
+          for (let batch = 0; batch < Math.ceil(TOTAL_DEMO_IMAGES / BATCH_SIZE); batch++) {
+            const batchPromises: Promise<GalleryImage | null>[] = []
+            const startIdx = batch * BATCH_SIZE
+            const endIdx = Math.min(startIdx + BATCH_SIZE, TOTAL_DEMO_IMAGES)
 
-        console.log('Asset data:', data)
+            // Process each image in the current batch
+            for (let i = startIdx + 1; i <= endIdx; i++) {
+              batchPromises.push((async () => {
+                for (const format of SUPPORTED_FORMATS) {
+                  const fileName = `Fleetwood 61-${i}.${format}`
+                  const { data } = supabase.storage
+                    .from('property-assets')
+                    .getPublicUrl(`demo/gallery/${fileName}`)
 
-        if (data && data.length > 0) {
-          const galleryImages = await Promise.all(data.map(async (asset: Asset) => {
-            console.log('Processing asset:', asset)
-            const { data: publicUrlData } = supabase
-              .storage
-              .from('property-assets')
-              .getPublicUrl(asset.storage_path)
-
-            console.log('Public URL data:', publicUrlData)
-            return {
-              src: publicUrlData.publicUrl,
-              alt: asset.title || asset.filename,
-              id: asset.id
+                  try {
+                    const response = await fetch(data.publicUrl, { 
+                      method: 'HEAD',
+                      signal: abortController.signal
+                    })
+                    if (response.ok) {
+                      console.log(`Found demo gallery image ${i} in ${format} format`)
+                      return {
+                        id: `demo-gallery-${i}`,
+                        src: data.publicUrl,
+                        alt: `Gallery Image ${i}`
+                      }
+                    }
+                  } catch (err: unknown) {
+                    const errorMessage = err instanceof Error ? err.message : 'Unknown error checking image format'
+                    console.log(`No ${format} format found for demo gallery image ${i}:`, errorMessage)
+                  }
+                }
+                return null
+              })())
             }
-          }))
 
-          console.log('Processed gallery images:', galleryImages)
-          setImages(galleryImages)
+            // Wait for the current batch to complete
+            const batchResults = await Promise.all(batchPromises)
+            const validImages = batchResults.filter((img): img is GalleryImage => img !== null)
+            
+            if (isMounted) {
+              setImages(prev => [...prev, ...validImages])
+              // Only show loading state for first batch
+              if (batch === 0) setLoading(false)
+            }
+          }
         } else {
-          console.log('No gallery images found')
-          setImages([])
+          // For real properties, load in batches from the database
+          const { data, error } = await supabase
+            .from('assets')
+            .select('id, storage_path')
+            .eq('property_id', propertyId)
+            .eq('category', 'gallery')
+            .eq('status', 'active')
+
+          if (error) throw error
+
+          if (data) {
+            // Process in batches
+            for (let i = 0; i < data.length; i += BATCH_SIZE) {
+              const batch = data.slice(i, i + BATCH_SIZE)
+              const batchImages = await Promise.all(
+                batch.map(async (asset) => {
+                  const { data: publicUrlData } = supabase
+                    .storage
+                    .from('property-assets')
+                    .getPublicUrl(asset.storage_path)
+
+                  return {
+                    id: asset.id,
+                    src: publicUrlData.publicUrl,
+                    alt: `Gallery Image`
+                  }
+                })
+              )
+
+              if (isMounted) {
+                setImages(prev => [...prev, ...batchImages])
+                // Only show loading state for first batch
+                if (i === 0) setLoading(false)
+              }
+            }
+          }
         }
       } catch (err) {
-        console.error('Detailed error:', err)
-        setError(err instanceof Error ? err : new Error('Failed to load gallery images'))
-      } finally {
-        setLoading(false)
+        console.error('Error loading gallery images:', err)
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Failed to load gallery images'))
+          setLoading(false)
+        }
       }
     }
 
     loadImages()
-  }, [supabase, propertyId])
+
+    return () => {
+      isMounted = false
+      abortController.abort()
+    }
+  }, [supabase, propertyId, isDemoProperty])
 
   return { images, loading, error }
 } 

@@ -49,10 +49,6 @@ interface ScraperModalProps {
   onSelect: (data: { content: Record<string, unknown> | null; assets: CategorizedAsset[] }) => void;
 }
 
-interface ApiResponse {
-  text: string;
-}
-
 export function PropertyScraperModal({ isOpen, onClose, onSelect }: ScraperModalProps) {
   const [activeTab, setActiveTab] = useState<'content' | 'media'>('content')
   const [url, setUrl] = useState('')
@@ -70,40 +66,66 @@ export function PropertyScraperModal({ isOpen, onClose, onSelect }: ScraperModal
     setError(null)
     
     try {
+      const payload = {
+        listing_url: url.trim() || null,
+        listing_text: listingText.trim() || null,
+        user: 'property-scraper'
+      }
+
+      console.log('Sending scrape request with payload:', payload)
+
       const response = await fetch('/api/scrape-property', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          listing_url: url,
-          listing_text: listingText,
-          user: 'property-scraper'
-        })
+        body: JSON.stringify(payload)
       })
 
+      const responseData = await response.json()
+      
       if (!response.ok) {
-        throw new Error('Failed to scrape property content')
+        throw new Error(responseData.error || 'Failed to scrape property content')
       }
 
-      const responseData = await response.json() as ApiResponse
-      console.log('Raw response:', responseData)
+      // Parse the content from the response
+      let parsedContent: Record<string, unknown>;
       
-      if (!responseData.text) {
-        throw new Error('Response missing content')
+      try {
+        // Clean and parse the response text directly
+        const cleanText = responseData.text
+          .replace(/^`|`$/g, '') // Remove backticks
+          .replace(/\\n/g, '') // Remove newlines
+          .replace(/\s+/g, ' ') // Clean up spaces
+          .trim();
+        
+        parsedContent = JSON.parse(cleanText);
+        
+        // Log the parsed content
+        console.log('Successfully parsed content:', parsedContent);
+        
+      } catch (error) {
+        console.error('Content parsing failed:', error);
+        throw new Error(`Failed to parse content: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
-      // Clean up the text by replacing Unicode spaces and escaped characters
-      const cleanText = responseData.text
-        .replace(/\u00a0/g, ' ')  // Replace Unicode spaces
-        .replace(/\\/g, '')       // Remove escape characters
-        .replace(/\n\s*/g, '\n')  // Clean up whitespace after newlines
+      // Validate the parsed content has the required structure
+      if (!parsedContent || typeof parsedContent !== 'object') {
+        throw new Error('Invalid content format: Not an object')
+      }
+
+      // Additional validation for required fields
+      const requiredFields = ['hero', 'features', 'lifestyle', 'neighbourhood', 'seo', 'og']
+      const missingFields = requiredFields.filter(field => !(field in parsedContent))
       
-      console.log('Cleaned text:', cleanText)
-      const parsedContent = JSON.parse(cleanText)
-      console.log('Parsed content:', parsedContent)
-      
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`)
+      }
+
+      // Store the parsed object in state
       setScrapedContent(parsedContent)
+      console.log('Stored content:', parsedContent)
+
       toast.success('Content scraped successfully')
     } catch (error) {
       console.error('Scraping error:', error)
@@ -143,12 +165,33 @@ export function PropertyScraperModal({ isOpen, onClose, onSelect }: ScraperModal
       return
     }
 
-    onSelect({
-      content: scrapedContent,
-      assets: []  // Always send empty array for content-only updates
-    })
-    toast.success('Content applied successfully')
-    setActiveTab('media')
+    try {
+      console.log('Applying content...')
+      console.log('Content:', {
+        type: typeof scrapedContent,
+        fields: Object.keys(scrapedContent),
+        content: scrapedContent
+      })
+
+      // Validate content structure before applying
+      const requiredFields = ['hero', 'features', 'lifestyle', 'neighbourhood', 'seo', 'og']
+      const missingFields = requiredFields.filter(field => !(field in scrapedContent))
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`)
+      }
+
+      onSelect({
+        content: scrapedContent,
+        assets: []  // Always send empty array for content-only updates
+      })
+      
+      toast.success('Content applied successfully')
+      setActiveTab('media')
+    } catch (error) {
+      console.error('Error applying content:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to apply content')
+    }
   }
 
   const handleTagClick = (category: MediaCategory) => {
@@ -386,6 +429,17 @@ export function PropertyScraperModal({ isOpen, onClose, onSelect }: ScraperModal
     return isComplete
   })
 
+  // Add helper function to determine if we can fetch content
+  const canFetchContent = url.trim() !== '' || listingText.trim() !== ''
+
+  // Add helper function to get the fetch button text
+  const getFetchButtonText = () => {
+    if (loading) return 'Fetching...'
+    if (url.trim() !== '' && listingText.trim() !== '') return 'Fetch Content (URL + Text)'
+    if (url.trim() !== '') return 'Fetch Content (URL)'
+    return 'Fetch Content (Text)'
+  }
+
   if (!isOpen) return null
 
   return (
@@ -562,10 +616,10 @@ export function PropertyScraperModal({ isOpen, onClose, onSelect }: ScraperModal
                 <>
                   <button
                     onClick={handleContentScrape}
-                    disabled={loading || !url}
+                    disabled={loading || !canFetchContent}
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {loading ? 'Fetching...' : 'Fetch Content'}
+                    {getFetchButtonText()}
                   </button>
                   {scrapedContent && (
                     <button

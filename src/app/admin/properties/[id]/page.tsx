@@ -284,7 +284,7 @@ function PropertyEditContent({ id }: { id: string }) {
 
   // Handle basic property info updates
   const handlePropertyChange = (
-    field: keyof Omit<Property, 'id' | 'created_at' | 'updated_at' | 'content' | 'metadata' | 'agency_settings'>,
+    field: keyof Omit<Property, 'id' | 'created_at' | 'updated_at' | 'content' | 'metadata'>,
     value: string | boolean
   ) => {
     setProperty(prev => ({
@@ -525,7 +525,6 @@ function PropertyEditContent({ id }: { id: string }) {
           },
           neighbourhood: {
             ...property.content.neighbourhood,
-            text: typedContent.neighbourhood.text || property.content.neighbourhood.text,
             part1_headline: typedContent.neighbourhood.part1_headline || property.content.neighbourhood.part1_headline,
             part1_text: typedContent.neighbourhood.part1_text || property.content.neighbourhood.part1_text,
             part2_headline: typedContent.neighbourhood.part2_headline || property.content.neighbourhood.part2_headline,
@@ -1648,8 +1647,12 @@ function PropertyEditContent({ id }: { id: string }) {
           <div className="bg-white rounded-lg shadow p-6">
             <PropertyAssets 
               propertyId={id} 
-              onSave={() => setProperty(prev => ({ ...prev, updated_at: new Date().toISOString() }))}
-              is_demo={property.is_demo}
+              isDemoProperty={property.is_demo}
+              onSave={() => {
+                // Show success message in the parent's error/success handling system
+                setError(null)
+                setSaving(false)
+              }} 
             />
           </div>
         )}

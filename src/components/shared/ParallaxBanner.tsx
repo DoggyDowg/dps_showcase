@@ -47,23 +47,28 @@ export function ParallaxBanner({ imageSrc, title, loading }: ParallaxBannerProps
       {loading ? (
         <div className="absolute inset-0 bg-gray-200 animate-pulse" />
       ) : (
-        <div 
-          ref={imageRef} 
-          className="absolute -top-[150px] left-0 right-0 h-[460px] overflow-hidden"
-        >
-          <Image
-            src={imageSrc}
-            alt={`${title} Banner`}
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-            onLoad={() => setIsImageLoaded(true)}
-          />
+        <div className="absolute inset-0">
+          {/* Image container */}
+          <div 
+            ref={imageRef} 
+            className="absolute -top-[150px] left-0 right-0 h-[460px] overflow-hidden"
+          >
+            <Image
+              src={imageSrc}
+              alt={`${title} Banner`}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+              onLoad={() => setIsImageLoaded(true)}
+            />
+          </div>
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black opacity-20" />
         </div>
       )}
-      <div className="absolute inset-0 bg-brand-dark/50" />
-      <div className="relative h-full max-w-7xl mx-auto px-4 flex items-center justify-center overflow-hidden">
+      {/* Content */}
+      <div className="relative h-full max-w-7xl mx-auto px-4 flex items-center justify-center">
         <h2 className="text-4xl font-light text-brand-light">{title}</h2>
       </div>
     </div>

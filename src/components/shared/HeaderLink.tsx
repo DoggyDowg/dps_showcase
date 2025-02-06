@@ -9,9 +9,10 @@ interface HeaderLinkProps {
   href: string
   children: React.ReactNode
   className?: string
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-export function HeaderLink({ href, children, className = '' }: HeaderLinkProps) {
+export function HeaderLink({ href, children, className = '', onClick }: HeaderLinkProps) {
   const [isPressed, setIsPressed] = useState(false)
   
   const gestureRef = useGesture({
@@ -30,13 +31,20 @@ export function HeaderLink({ href, children, className = '' }: HeaderLinkProps) 
 
   const isHashLink = href.startsWith('#')
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const internalHandleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isHashLink) {
       e.preventDefault()
       const element = document.querySelector(href)
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' })
       }
+    }
+  }
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    internalHandleClick(e)
+    if (onClick) {
+      onClick(e)
     }
   }
 
@@ -53,7 +61,7 @@ export function HeaderLink({ href, children, className = '' }: HeaderLinkProps) 
   return (
     <Link
       href={href}
-      ref={gestureRef as any}
+      ref={(node: HTMLAnchorElement | null) => { gestureRef.current = node as HTMLAnchorElement | null; }}
       className={`
         relative text-brand-light hover:text-brand-light/80 transition-colors
         after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full 
@@ -64,6 +72,7 @@ export function HeaderLink({ href, children, className = '' }: HeaderLinkProps) 
         transition-transform duration-150
         ${linkClassName}
       `}
+      onClick={onClick}
     >
       {children}
     </Link>

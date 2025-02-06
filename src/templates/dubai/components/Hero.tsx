@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useHeroVideo } from '@/hooks/useHeroVideo'
 import styles from '@/styles/Hero.module.css'
 import type { Property } from '@/types/property'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
-import { DynamicImage } from '@/components/shared/DynamicImage'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -15,7 +15,7 @@ interface HeroProps {
 }
 
 export function Hero({ property }: HeroProps) {
-  const { videoUrl } = useHeroVideo(property.id, property.is_demo)
+  const { videoUrl } = useHeroVideo(property.id)
   
   // Refs for GSAP animations
   const addressRef = useRef<HTMLHeadingElement>(null)
@@ -150,7 +150,28 @@ export function Hero({ property }: HeroProps) {
               <source src={videoUrl} type="video/mp4" />
             </video>
             {/* Single overlay that animates from black to semi-transparent */}
-            <div className="video-overlay absolute inset-0 bg-brand-dark transition-opacity duration-1000" style={{ opacity: 1 }} />
+            <div className="video-overlay absolute inset-0 bg-brand-dark transition-opacity duration-1000" style={{ opacity: 1 }} ref={el => {
+              if (el && !el.dataset.initialized) {
+                const videoElement = document.querySelector('video')
+                const startAnimation = () => {
+                  gsap.to(el, {
+                    opacity: 0.3,
+                    duration: 1,
+                    delay: 1,
+                    ease: "power2.inOut",
+                  })
+                }
+
+                if (videoElement) {
+                  if (videoElement.readyState >= 3) {
+                    startAnimation()
+                  } else {
+                    videoElement.addEventListener('loadeddata', startAnimation)
+                  }
+                }
+                el.dataset.initialized = 'true'
+              }
+            }} />
           </>
         ) : (
           <div className="absolute inset-0 bg-brand-dark" />
@@ -185,7 +206,7 @@ export function Hero({ property }: HeroProps) {
           {/* Agency Logo */}
           <div ref={logoRef} className="hidden md:flex justify-center mb-4">
             {property.agency_settings?.branding?.logo?.light && (
-              <DynamicImage
+              <Image
                 src={property.agency_settings.branding.logo.light}
                 alt={property.agency_name || 'Agency Logo'}
                 width={200}
@@ -236,13 +257,19 @@ export function Hero({ property }: HeroProps) {
             </button>
           </div>
 
-          {/* Headlines */}
-          <h1 ref={headlineRef} className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light mb-4">
-            {property.content?.hero?.headline || 'Welcome Home'}
-          </h1>
-          <p ref={subheadlineRef} className="text-lg sm:text-xl md:text-2xl font-light max-w-4xl mx-auto">
-            {property.content?.hero?.subheadline || 'Discover your next chapter'}
-          </p>
+          {/* Headline and Subheadline */}
+          <div>
+            <h1 ref={headlineRef} className="text-2xl sm:text-3xl md:text-5xl font-light mb-3 sm:mb-4 text-brand-light">
+              {property.content.hero.headline}
+            </h1>
+            <p 
+              ref={subheadlineRef} 
+              className="text-lg sm:text-xl md:text-2xl font-light max-w-2xl mx-auto text-brand-light !pb-[80px]"
+              style={{ paddingBottom: '80px' }}
+            >
+              {property.content.hero.subheadline}
+            </p>
+          </div>
         </div>
       </div>
     </section>

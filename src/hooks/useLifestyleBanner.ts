@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-export function useLifestyleBanner(propertyId?: string) {
+export function useLifestyleBanner(propertyId?: string, isDemoProperty?: boolean) {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const supabase = createClientComponentClient()
 
   useEffect(() => {
-    async function loadImage() {
+    async function loadBanner() {
       if (!propertyId) {
         console.log('No propertyId provided')
         setLoading(false)
@@ -20,44 +20,79 @@ export function useLifestyleBanner(propertyId?: string) {
       try {
         setLoading(true)
         setError(null)
-        console.log('Fetching lifestyle banner for property:', propertyId)
 
+        // If it's a demo property, use the demo banner
+        if (isDemoProperty) {
+          console.log('Loading demo lifestyle banner')
+          const supportedFormats = ['webp', 'jpg', 'jpeg', 'png']
+          let foundImage = false
+          
+          for (const format of supportedFormats) {
+            const { data: publicUrlData } = supabase
+              .storage
+              .from('property-assets')
+              .getPublicUrl(`demo/lifestyle_banner/banner.${format}`)
+
+            // Verify if the image exists
+            try {
+              const response = await fetch(publicUrlData.publicUrl, { method: 'HEAD' })
+              if (response.ok) {
+                console.log(`Found lifestyle banner image in ${format} format`)
+                setImageUrl(publicUrlData.publicUrl)
+                foundImage = true
+                break
+              }
+            } catch {
+              console.log(`No ${format} format found for lifestyle banner image`)
+            }
+          }
+
+          if (!foundImage) {
+            console.error('No supported image format found for demo lifestyle banner')
+            setImageUrl(null)
+          }
+          return
+        }
+
+        // Otherwise, query the assets table for a real property
+        console.log('Fetching lifestyle banner for property:', propertyId)
         const { data, error } = await supabase
           .from('assets')
           .select('storage_path')
           .eq('property_id', propertyId)
           .eq('category', 'lifestyle_banner')
+          .eq('status', 'active')
           .single()
 
         if (error) {
-          console.error('Supabase error:', error)
+          if (error.code === 'PGRST116') {
+            console.log('No lifestyle banner found for property')
+            setImageUrl(null)
+            return
+          }
           throw error
         }
 
-        console.log('Asset data:', data)
-
         if (data?.storage_path) {
-          // Get the public URL for the asset
           const { data: publicUrlData } = supabase
             .storage
             .from('property-assets')
             .getPublicUrl(data.storage_path)
 
-          console.log('Public URL:', publicUrlData)
           setImageUrl(publicUrlData.publicUrl)
         } else {
-          console.log('No lifestyle banner found for property')
+          setImageUrl(null)
         }
       } catch (err) {
-        console.error('Detailed error:', err)
+        console.error('Error loading lifestyle banner:', err)
         setError(err instanceof Error ? err : new Error('Failed to load lifestyle banner'))
       } finally {
         setLoading(false)
       }
     }
 
-    loadImage()
-  }, [supabase, propertyId])
+    loadBanner()
+  }, [supabase, propertyId, isDemoProperty])
 
   return { imageUrl, loading, error }
 } 

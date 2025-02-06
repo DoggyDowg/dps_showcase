@@ -5,20 +5,10 @@ import Image from 'next/image'
 import { siteContent } from '@/config/content'
 import styles from '@/styles/DocumentLink.module.css'
 import { PlayIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useMoreInfoVideo } from '@/hooks/useMoreInfoVideo'
+import { useMoreInfoFloorplans } from '@/hooks/useMoreInfoFloorplans'
 import type { Asset } from '@/types/assets'
 import type { Property } from '@/types/property'
-
-interface DocumentItem {
-  label: string
-  url: string
-}
-
-interface InfoItem {
-  info: string
-  detail: string
-}
 
 interface MoreInfoProps {
   property: Property;
@@ -28,13 +18,41 @@ export function MoreInfo({ property }: MoreInfoProps) {
   const { moreInfo } = siteContent
   const [showFloorplan, setShowFloorplan] = useState(false)
   const [showVideo, setShowVideo] = useState(false)
-  const [floorplans, setFloorplans] = useState<Asset[]>([])
   const [selectedFloorplan, setSelectedFloorplan] = useState<Asset | null>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const [isVisible, setIsVisible] = useState(false)
-  const supabase = createClientComponentClient()
-  const { videoUrl, loading: videoLoading, error: videoError } = useMoreInfoVideo(property.id)
+  const { videoUrl, loading: videoLoading, error: videoError } = useMoreInfoVideo(property.id, property.is_demo)
+  const { floorplans } = useMoreInfoFloorplans(property.id, property.is_demo)
+  const [demoContent, setDemoContent] = useState<{
+    documents: Array<{ label: string; url: string }>;
+    additionalInfo: Array<{ info: string; detail: string }>;
+  } | null>(null)
+
+  // Set up demo content if needed
+  useEffect(() => {
+    if (property.is_demo) {
+      setDemoContent({
+        documents: [
+          { label: 'Statement of Information', url: '#' },
+          { label: 'Contract of Sale', url: '#' }
+        ],
+        additionalInfo: [
+          { info: 'Council Rates', detail: '$2,600 per annum' },
+          { info: 'Body Corp', detail: '$460 per qtr' }
+        ]
+      })
+    }
+  }, [property.is_demo])
+
+  // Get the content to display based on whether it's a demo property or not
+  const displayDocuments = property.is_demo 
+    ? demoContent?.documents 
+    : property.metadata?.more_info?.documents
+
+  const displayAdditionalInfo = property.is_demo 
+    ? demoContent?.additionalInfo 
+    : property.metadata?.more_info?.additionalInfo
 
   console.log('MoreInfo render - videoUrl:', videoUrl)
   console.log('MoreInfo render - videoLoading:', videoLoading)
@@ -63,36 +81,29 @@ export function MoreInfo({ property }: MoreInfoProps) {
     return () => observer.disconnect()
   }, [])
 
-  // Load floorplan asset
+  // Set the first floorplan as selected by default when floorplans load
   useEffect(() => {
-    async function loadFloorplan() {
-      try {
-        const { data, error } = await supabase
-          .from('assets')
-          .select('*')
-          .eq('property_id', property.id)
-          .eq('category', 'floorplan')
-          .eq('status', 'active')
+    if (floorplans.length > 0) {
+      setSelectedFloorplan(floorplans[0])
+    }
+  }, [floorplans])
 
-        if (error) {
-          console.error('Error loading floorplan:', error)
-          return
-        }
-
-        setFloorplans(data || [])
-        // Set the first floorplan as selected by default
-        if (data && data.length > 0) {
-          setSelectedFloorplan(data[0])
-        }
-      } catch (err) {
-        console.error('Error loading floorplan:', err)
+  // Add default demo values for documents and additional info
+  useEffect(() => {
+    if (property.is_demo && property.metadata?.more_info) {
+      property.metadata.more_info = {
+        ...property.metadata.more_info,
+        documents: [
+          { label: 'Statement of Information', url: '#' },
+          { label: 'Contract of Sale', url: '#' }
+        ],
+        additionalInfo: [
+          { info: 'Council Rates', detail: '$2,600 per annum' },
+          { info: 'Body Corp', detail: '$460 per qtr' }
+        ]
       }
     }
-
-    if (property.id) {
-      loadFloorplan()
-    }
-  }, [property.id, supabase])
+  }, [property.is_demo, property.metadata])
 
   // Guard against undefined content
   if (!moreInfo) return null
@@ -105,6 +116,7 @@ export function MoreInfo({ property }: MoreInfoProps) {
   return (
     <section 
       ref={sectionRef}
+      id="info"
       className="py-20"
       style={{ 
         backgroundColor: accentColor
@@ -171,14 +183,14 @@ export function MoreInfo({ property }: MoreInfoProps) {
             ) : null}
 
             {/* Property Info Section */}
-            {property.metadata?.more_info?.additionalInfo?.some((item: InfoItem) => item.info && item.detail) && (
+            {displayAdditionalInfo?.some((item) => item.info && item.detail) && (
               <div 
                 className="p-6 rounded-lg shadow-sm text-center backdrop-blur-sm"
                 style={{ backgroundColor: 'rgba(var(--brand-light-rgb), 0.2)' }}
               >
                 <h3 className="text-xl font-light mb-4 text-brand-dark">More Info</h3>
                 <ul className="space-y-3 max-w-md mx-auto">
-                  {property.metadata?.more_info?.additionalInfo?.filter((item: InfoItem) => item.info && item.detail).map((item: InfoItem) => (
+                  {displayAdditionalInfo?.filter((item) => item.info && item.detail).map((item) => (
                     <li key={item.info} className="flex flex-col sm:flex-row justify-between items-center text-brand-dark border-b border-brand-light pb-2 last:border-0 last:pb-0 gap-1">
                       <span className="font-light text-sm">{item.info}</span>
                       <span className="font-medium text-sm">{item.detail}</span>
@@ -189,14 +201,14 @@ export function MoreInfo({ property }: MoreInfoProps) {
             )}
 
             {/* Important Documents Section */}
-            {property.metadata?.more_info?.documents?.some((doc: DocumentItem) => doc.label && doc.url) && (
+            {displayDocuments?.some((doc) => doc.label && doc.url) && (
               <div 
                 className="p-6 rounded-lg shadow-sm text-center backdrop-blur-sm"
                 style={{ backgroundColor: 'rgba(var(--brand-light-rgb), 0.2)' }}
               >
                 <h3 className="text-xl font-light mb-4 text-brand-dark">Important Documents</h3>
                 <ul className="space-y-3 max-w-md mx-auto">
-                  {property.metadata?.more_info?.documents?.filter((doc: DocumentItem) => doc.label && doc.url).map((doc: DocumentItem) => (
+                  {displayDocuments?.filter((doc) => doc.label && doc.url).map((doc) => (
                     <li key={doc.label} className="flex justify-center">
                       <a
                         href={doc.url}

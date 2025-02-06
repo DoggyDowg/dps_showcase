@@ -49,6 +49,10 @@ export function useProperty(propertyId?: string) {
             if (agencyBranding.logo.light) {
               agencyBranding.logo.light = `${agencyBranding.logo.light}?t=${timestamp}`
             }
+            // Add cache busting for favicon
+            if (agencyBranding.favicon) {
+              agencyBranding.favicon = `${agencyBranding.favicon}?t=${timestamp}`
+            }
           }
 
           // Ensure all content sections are properly initialized

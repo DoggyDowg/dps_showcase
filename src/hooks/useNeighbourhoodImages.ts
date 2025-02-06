@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Asset } from '@/types/assets'
 
-export interface NeighbourhoodImage {
+interface NeighbourhoodImage {
+  id: string
   src: string
   alt: string
-  id: string
 }
 
-export function useNeighbourhoodImages(propertyId?: string) {
+export function useNeighbourhoodImages(propertyId?: string, isDemoProperty?: boolean) {
   const [images, setImages] = useState<NeighbourhoodImage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -27,46 +26,81 @@ export function useNeighbourhoodImages(propertyId?: string) {
       try {
         setLoading(true)
         setError(null)
-        console.log('Fetching neighbourhood images for property:', propertyId)
 
+        // If it's a demo property, generate demo neighbourhood images
+        if (isDemoProperty) {
+          console.log('Loading demo neighbourhood images')
+          const supportedFormats = ['webp', 'jpg', 'jpeg', 'png']
+          const demoImages: NeighbourhoodImage[] = []
+
+          for (let i = 1; i <= 3; i++) {
+            let foundImage = false
+            
+            for (const format of supportedFormats) {
+              const { data } = supabase.storage
+                .from('property-assets')
+                .getPublicUrl(`demo/neighbourhood/image${i}.${format}`)
+
+              // Verify if the image exists
+              try {
+                const response = await fetch(data.publicUrl, { method: 'HEAD' })
+                if (response.ok) {
+                  console.log(`Found demo neighbourhood image ${i} in ${format} format`)
+                  demoImages.push({
+                    id: `demo-neighbourhood-${i}`,
+                    src: data.publicUrl,
+                    alt: `Neighbourhood Image ${i}`
+                  })
+                  foundImage = true
+                  break
+                }
+              } catch {
+                console.log(`No ${format} format found for demo neighbourhood image ${i}`)
+              }
+            }
+
+            if (!foundImage) {
+              console.error(`No supported image format found for demo neighbourhood image ${i}`)
+            }
+          }
+
+          console.log('Demo neighbourhood images:', demoImages)
+          setImages(demoImages)
+          return
+        }
+
+        // Otherwise, query the assets table for a real property
+        console.log('Fetching neighbourhood images for property:', propertyId)
         const { data, error } = await supabase
           .from('assets')
-          .select('*')
+          .select('id, storage_path')
           .eq('property_id', propertyId)
           .eq('category', 'neighbourhood')
-          .order('filename', { ascending: true })
+          .eq('status', 'active')
 
-        if (error) {
-          console.error('Supabase error:', error)
-          throw error
-        }
+        if (error) throw error
 
-        console.log('Asset data:', data)
+        if (data) {
+          const neighbourhoodImages = await Promise.all(
+            data.map(async (asset) => {
+              const { data: publicUrlData } = supabase
+                .storage
+                .from('property-assets')
+                .getPublicUrl(asset.storage_path)
 
-        if (data && data.length > 0) {
-          const neighbourhoodImages = await Promise.all(data.map(async (asset: Asset) => {
-            console.log('Processing asset:', asset)
-            const { data: publicUrlData } = supabase
-              .storage
-              .from('property-assets')
-              .getPublicUrl(asset.storage_path)
+              return {
+                id: asset.id,
+                src: publicUrlData.publicUrl,
+                alt: `Neighbourhood Image`
+              }
+            })
+          )
 
-            console.log('Public URL data:', publicUrlData)
-            return {
-              src: publicUrlData.publicUrl,
-              alt: asset.title || asset.filename,
-              id: asset.id
-            }
-          }))
-
-          console.log('Processed neighbourhood images:', neighbourhoodImages)
+          console.log('Neighbourhood images:', neighbourhoodImages)
           setImages(neighbourhoodImages)
-        } else {
-          console.log('No neighbourhood images found')
-          setImages([])
         }
       } catch (err) {
-        console.error('Detailed error:', err)
+        console.error('Error loading neighbourhood images:', err)
         setError(err instanceof Error ? err : new Error('Failed to load neighbourhood images'))
       } finally {
         setLoading(false)
@@ -74,7 +108,7 @@ export function useNeighbourhoodImages(propertyId?: string) {
     }
 
     loadImages()
-  }, [supabase, propertyId])
+  }, [supabase, propertyId, isDemoProperty])
 
   return { images, loading, error }
 } 

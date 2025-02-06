@@ -21,6 +21,7 @@ const defaultBranding = {
     dark: '',
     light: ''
   },
+  favicon: '',
   typography: {
     headingFont: {
       url: '',
@@ -127,6 +128,7 @@ export default function AgencyEditPage() {
             dark: agency.branding?.logo?.dark ? `${agency.branding.logo.dark}?t=${timestamp}` : '',
             light: agency.branding?.logo?.light ? `${agency.branding.logo.light}?t=${timestamp}` : ''
           },
+          favicon: agency.branding?.favicon || '',
           typography: {
             ...defaultBranding.typography,
             ...(agency.branding?.typography || {})
@@ -493,6 +495,86 @@ export default function AgencyEditPage() {
     });
   };
 
+  const handleStoreFavicon = async (file: File) => {
+    if (!agency) return;
+
+    try {
+      console.log('Starting favicon upload:', {
+        fileSize: file.size,
+        fileType: file.type,
+        agencyId: agency.id
+      });
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'agency-assets');
+      formData.append('path', `${agency.id}/favicon`);
+
+      console.log('Sending upload request to /api/upload');
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const responseText = await response.text();
+      console.log('Upload response:', {
+        status: response.status,
+        statusText: response.statusText,
+        responseText
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to upload favicon: ${response.statusText}. Response: ${responseText}`);
+      }
+
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (error) {
+        console.error('Failed to parse response JSON:', error);
+        throw new Error(`Invalid JSON response: ${responseText}`);
+      }
+
+      if (!responseData.url) {
+        throw new Error('No URL returned from upload');
+      }
+
+      console.log('Upload successful, updating agency state with URL:', responseData.url);
+      
+      // Get the public URL from Supabase
+      const { data: urlData } = supabase.storage
+        .from('agency-assets')
+        .getPublicUrl(`${agency.id}/favicon`);
+
+      // Add timestamp for cache busting
+      const timestamp = Date.now();
+      const urlWithTimestamp = `${urlData.publicUrl}?t=${timestamp}`;
+
+      // Update the agency state with the new favicon URL
+      setAgency(prev => {
+        if (!prev) return null;
+        const branding = prev.branding ?? defaultBranding;
+        return {
+          ...prev,
+          branding: {
+            ...branding,
+            favicon: urlWithTimestamp
+          }
+        };
+      });
+
+      toast.success('Favicon uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading favicon:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      toast.error('Failed to upload favicon');
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -624,20 +706,43 @@ export default function AgencyEditPage() {
             <h2 className="text-lg font-medium mb-4">Branding</h2>
             <div className="space-y-6">
               {/* Logos */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FileUpload
-                  label="Dark Logo"
-                  accept="image/*"
-                  value={agency.branding?.logo?.dark ?? ''}
-                  onChange={handleDarkLogoUpload}
-                />
-                <FileUpload
-                  label="Light Logo"
-                  accept="image/*"
-                  value={agency.branding?.logo?.light ?? ''}
-                  onChange={handleLightLogoUpload}
-                  isDarkBg
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Dark Logo</label>
+                  <FileUpload
+                    label="Dark Logo"
+                    accept="image/*"
+                    value={agency.branding?.logo?.dark ?? ''}
+                    onChange={handleDarkLogoUpload}
+                    disabled={params.id === 'new'}
+                    helperText={params.id === 'new' ? 'Save agency first to upload logos' : 'Upload a dark version of your logo (for light backgrounds)'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Light Logo</label>
+                  <FileUpload
+                    label="Light Logo"
+                    accept="image/*"
+                    value={agency.branding?.logo?.light ?? ''}
+                    onChange={handleLightLogoUpload}
+                    disabled={params.id === 'new'}
+                    helperText={params.id === 'new' ? 'Save agency first to upload logos' : 'Upload a light version of your logo (for dark backgrounds)'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Favicon</label>
+                  <FileUpload
+                    label="Favicon"
+                    accept=".ico,.png"
+                    value={agency.branding?.favicon ?? ''}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleStoreFavicon(file);
+                    }}
+                    disabled={params.id === 'new'}
+                    helperText={params.id === 'new' ? 'Save agency first to upload favicon' : 'Upload your favicon (.ico or .png format)'}
+                  />
+                </div>
               </div>
 
               {/* Colors */}
@@ -688,6 +793,8 @@ export default function AgencyEditPage() {
                         const file = e.target.files?.[0];
                         if (file) handleStoreFontFile(file, 'heading');
                       }}
+                      disabled={params.id === 'new'}
+                      helperText={params.id === 'new' ? "Save agency first to upload fonts" : undefined}
                       isFont
                     />
                   </div>
@@ -702,6 +809,8 @@ export default function AgencyEditPage() {
                         const file = e.target.files?.[0];
                         if (file) handleStoreFontFile(file, 'body');
                       }}
+                      disabled={params.id === 'new'}
+                      helperText={params.id === 'new' ? "Save agency first to upload fonts" : undefined}
                       isFont
                     />
                   </div>

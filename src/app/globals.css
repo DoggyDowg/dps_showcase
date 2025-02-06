@@ -113,13 +113,19 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-brand-dark/20;
+    background-color: rgba(var(--brand-dark-rgb), 0.15);
     border-radius: 3px;
     transition: background-color 0.2s;
   }
 
+  /* Only show scrollbar on hover of the container */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+  }
+
   .scrollbar-thin:hover::-webkit-scrollbar-thumb {
-    @apply bg-brand-dark/40;
+    background-color: rgba(var(--brand-dark-rgb), 0.2);
   }
 }
 
