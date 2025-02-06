@@ -7,51 +7,39 @@ interface SocialShareProps {
   description?: string
   url: string
   hashtags?: string[]
+  image?: string
 }
 
 export default function SocialShare({ 
   url = typeof window !== 'undefined' ? window.location.href : '',
   title = 'Check out this amazing property!',
   description = 'Discover your dream home with amazing features and lifestyle options.',
-  hashtags = ['RealEstate']
+  hashtags = ['RealEstate'],
+  image
 }: SocialShareProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSent, setIsSent] = useState(false)
 
-  // Format share text and URLs
-  const encodedUrl = encodeURIComponent(url)
-  const encodedTitle = encodeURIComponent(title)
-  const encodedDescription = encodeURIComponent(description || '')
-  const encodedHashtags = hashtags.join(',')
-
   const handleFacebookShare = () => {
-    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`
-    const width = 550
-    const height = 450
-    const left = window.screen.width / 2 - width / 2
-    const top = window.screen.height / 2 - height / 2
-
-    window.open(
-      shareUrl,
-      'facebook-share-dialog',
-      `width=${width},height=${height},top=${top},left=${left}`
-    )
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(description)}${image ? `&picture=${encodeURIComponent(image)}` : ''}`
+    window.open(fbUrl, '_blank')
     setIsOpen(false)
     setIsSent(true)
     setTimeout(() => setIsSent(false), 2000)
   }
 
   const handleTwitterShare = () => {
-    const shareUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}%20${encodedDescription}&hashtags=${encodedHashtags}`
-    window.open(shareUrl, '_blank')
+    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}&hashtags=${hashtags?.join(',')}`
+    window.open(twitterUrl, '_blank')
     setIsOpen(false)
     setIsSent(true)
     setTimeout(() => setIsSent(false), 2000)
   }
 
   const handleWhatsAppShare = () => {
-    const shareUrl = `https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedDescription}%20${encodedUrl}`
-    window.open(shareUrl, '_blank')
+    const whatsappText = `${title}\n\n${description}\n\n${url}`
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`
+    window.open(whatsappUrl, '_blank')
     setIsOpen(false)
     setIsSent(true)
     setTimeout(() => setIsSent(false), 2000)

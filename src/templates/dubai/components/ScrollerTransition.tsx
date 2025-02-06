@@ -37,7 +37,7 @@ export function GridGallery({ propertyId }: GridGalleryProps) {
     };
 
     fetchGalleryImages();
-  }, [propertyId]);
+  }, [propertyId, supabase]);
 
   // Initialize animations
   useEffect(() => {

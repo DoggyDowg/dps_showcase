@@ -53,6 +53,8 @@ export function useMoreInfoFloorplans(propertyId?: string, isDemoProperty?: bool
                     id: `demo-floor-${floor}`,
                     property_id: propertyId,
                     category: 'floorplan',
+                    type: 'image',
+                    filename: `floor${floor}.${format}`,
                     storage_path: `demo/floorplan/floor${floor}.${format}`,
                     status: 'active',
                     created_at: new Date().toISOString(),

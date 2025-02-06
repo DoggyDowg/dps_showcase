@@ -284,7 +284,7 @@ export function PropertyAssets({ propertyId, onSave, isDemoProperty }: PropertyA
         });
       }
     }
-  }, [propertyId, assets, supabase, onSave]);
+  }, [propertyId, assets, supabase, onSave, isDemoProperty]);
 
   // Delete asset
   const handleDelete = async (asset: Asset) => {
