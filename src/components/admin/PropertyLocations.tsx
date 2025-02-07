@@ -25,7 +25,7 @@ interface Toast {
   id: number;
 }
 
-export function PropertyLocations({ propertyId, onSave }: PropertyLocationsProps) {
+export default function PropertyLocations({ propertyId, onSave }: PropertyLocationsProps) {
   const [state, setState] = useState<LocationState>({
     property: null,
     landmarks: [],

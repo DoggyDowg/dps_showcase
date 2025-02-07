@@ -33,7 +33,7 @@ export interface MoreInfoData {
 }
 
 const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, PropertyMoreInfoProps>(
-  ({ propertyId, onSave }, ref) => {
+  function PropertyMoreInfo({ propertyId, onSave }, ref) {
     const supabase = createClientComponentClient()
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<Error | null>(null)
@@ -505,6 +505,4 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
   }
 )
 
-PropertyMoreInfo.displayName = 'PropertyMoreInfo'
-
-export { PropertyMoreInfo } 
+export default PropertyMoreInfo 

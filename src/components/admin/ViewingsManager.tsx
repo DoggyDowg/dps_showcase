@@ -19,7 +19,7 @@ interface ViewingsManagerProps {
   propertyId: string
 }
 
-export function ViewingsManager({ propertyId }: ViewingsManagerProps) {
+export default function ViewingsManager({ propertyId }: ViewingsManagerProps) {
   const supabase = createClientComponentClient()
   const [viewings, setViewings] = useState<Viewing[]>([])
   const [loading, setLoading] = useState(true)

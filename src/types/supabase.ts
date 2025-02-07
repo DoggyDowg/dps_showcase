@@ -230,6 +230,7 @@ export type Database = {
           agent_id: string | null
           content: Json
           created_at: string | null
+          customDomain: string | null
           id: string
           metadata: Json | null
           name: string
@@ -248,6 +249,7 @@ export type Database = {
           agent_id?: string | null
           content?: Json
           created_at?: string | null
+          customDomain?: string | null
           id?: string
           metadata?: Json | null
           name: string
@@ -266,6 +268,7 @@ export type Database = {
           agent_id?: string | null
           content?: Json
           created_at?: string | null
+          customDomain?: string | null
           id?: string
           metadata?: Json | null
           name?: string

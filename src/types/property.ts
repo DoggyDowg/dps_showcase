@@ -92,48 +92,52 @@ export interface Viewing {
   updated_at: string
 }
 
+export interface MoreInfoData {
+  ctaButtons?: {
+    primary?: {
+      label: string
+      type: 'download' | 'link' | 'anchor'
+      url: string
+    }
+    secondary?: {
+      label: string
+      type: 'download' | 'link' | 'anchor'
+      url: string
+    }
+  }
+  additionalInfo?: Array<{
+    info: string
+    detail: string
+  }>
+  documents?: Array<{
+    label: string
+    url: string
+  }>
+}
+
 export interface Property {
   id: string
   created_at: string
   updated_at: string
   name: string
   is_demo: boolean
-  template_name: 'dubai' | 'cusco'
+  template_name: string
   street_address: string
   suburb: string
   state: string
   price: string
-  status: 'draft' | 'published' | 'archived'
+  status: string
   agency_id: string | null
   agency_name: string | null
   agent_id: string | null
   office_id: string | null
-  address?: string
-  footer_links?: FooterLink[]
+  custom_domain: string | null
+  deployment_url: string | null
+  footer_links: FooterLink[]
   metadata: {
-    more_info?: {
-      ctaButtons?: {
-        primary?: {
-          label: string
-          type: 'download' | 'link' | 'anchor'
-          url: string
-        }
-        secondary?: {
-          label: string
-          type: 'download' | 'link' | 'anchor'
-          url: string
-        }
-      }
-      additionalInfo?: Array<{
-        info: string
-        detail: string
-      }>
-      documents?: Array<{
-        label: string
-        url: string
-      }>
-    }
-  } & Record<string, unknown>
+    template_version: string
+    more_info?: MoreInfoData
+  }
   template_version: string
   content: PropertyContent
   agency_settings?: {

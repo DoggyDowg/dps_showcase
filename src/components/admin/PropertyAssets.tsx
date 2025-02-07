@@ -72,7 +72,7 @@ function UploadZone({ category, config, onDrop, isAtCapacity }: UploadZoneProps)
   );
 }
 
-export function PropertyAssets({ propertyId, onSave, isDemoProperty }: PropertyAssetsProps) {
+export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: PropertyAssetsProps) {
   const [assets, setAssets] = useState<PropertyAssets>({
     hero_video: undefined,
     gallery: [],
