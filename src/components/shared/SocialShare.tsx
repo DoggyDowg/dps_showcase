@@ -45,10 +45,15 @@ export default function SocialShare({
     setTimeout(() => setIsSent(false), 2000)
   }
 
+  const handleEmailShare = () => {
+    const subject = encodeURIComponent(`Check out this property`)
+    const body = encodeURIComponent(`I thought you might be interested in this property: ${url}`)
+    window.location.href = `mailto:?subject=${subject}&body=${body}`
+  }
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(url)
-      setIsOpen(false)
       setIsSent(true)
       setTimeout(() => setIsSent(false), 2000)
     } catch (err) {
@@ -159,16 +164,33 @@ export default function SocialShare({
         </svg>
       </button>
 
+      {/* Email Share Button */}
+      <button
+        onClick={handleEmailShare}
+        className={socialButtonClasses}
+        style={{ transitionDelay: isOpen ? '200ms' : '20ms' }}
+      >
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#4A5568">
+          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+        </svg>
+      </button>
+
       {/* Copy Link Button */}
       <button
         onClick={handleCopyLink}
         className={socialButtonClasses}
-        style={{ transitionDelay: isOpen ? '150ms' : '40ms' }}
+        style={{ transitionDelay: isOpen ? '250ms' : '0ms' }}
       >
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>
+        {isSent ? (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#10B981">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+          </svg>
+        ) : (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        )}
       </button>
     </div>
   )

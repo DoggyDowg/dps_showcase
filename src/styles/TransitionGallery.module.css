@@ -1,11 +1,31 @@
 .imageContainer {
   position: relative;
   height: 16rem;
-  transform: scale(1);
+  overflow: hidden;
+  border-radius: 0.5rem;
+  transform: translateZ(0);
+}
+
+.imageContainer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  pointer-events: none;
   transition: all 0.3s ease-out;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.imageContainer img {
+  transition: transform 0.3s ease-out;
+  transform: scale(1.01);
+  will-change: transform;
+}
+
+.imageContainer:hover img {
+  transform: scale(1.1);
 }
 
 .imageContainer:hover {
-  transform: scale(1.05);
   z-index: 10;
 } 

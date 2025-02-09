@@ -51,6 +51,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
   })
   const { images, loading, error } = useGalleryImages(property.id, property.is_demo)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
+  const [copySuccess, setCopySuccess] = useState(false)
 
   // Add debugging logs
   useEffect(() => {
@@ -146,7 +147,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
 
   return (
     <>
-      <section ref={sectionRef} className="relative py-16 bg-brand-dark">
+      <section ref={sectionRef} className="relative py-16 bg-brand-dark overflow-hidden">
         <div className="relative w-full overflow-hidden px-6 sm:px-8 lg:px-12">
           {/* Left Chevron */}
           <button
@@ -162,17 +163,18 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
           {/* Images */}
           <div
             ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth py-2 px-1 mx-auto max-w-[1400px]"
+            className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth py-2 px-1 mx-auto max-w-[1400px]"
           >
             {images.map((image, index) => (
               <div
                 key={image.id}
-                className="flex-shrink-0 flex-grow-0 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 cursor-pointer"
+                className="flex-shrink-0 flex-grow-0 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 cursor-pointer overflow-hidden"
                 style={{ 
                   opacity: inView ? 1 : 0,
                   transform: `translateY(${inView ? '0' : '40px'})`,
                   transition: 'all 800ms cubic-bezier(0.4, 0, 0.2, 1)',
-                  transitionDelay: `${index * 300}ms`
+                  transitionDelay: `${index * 300}ms`,
+                  willChange: 'transform, opacity'
                 }}
                 onClick={() => handleImageClick(index)}
               >
@@ -182,7 +184,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
                     alt={image.alt}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    className="object-cover rounded-lg shadow-lg"
+                    className="object-cover"
                     priority={index < 4}
                   />
                 </div>
@@ -215,6 +217,58 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
               <link.icon className="w-6 h-6" />
             </button>
           ))}
+          {/* Email Share Button */}
+          <button
+            onClick={() => {
+              const subject = encodeURIComponent(`Check out this property`)
+              const body = encodeURIComponent(`I thought you might be interested in this property: ${window.location.href}`)
+              window.location.href = `mailto:?subject=${subject}&body=${body}`
+            }}
+            className="text-brand-light hover:text-brand-light/80 transition-colors"
+            aria-label="Share via Email"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+            </svg>
+          </button>
+          {/* Copy Link Button */}
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(window.location.href)
+                setCopySuccess(true)
+                setTimeout(() => setCopySuccess(false), 2000)
+              } catch (err) {
+                console.error('Failed to copy:', err)
+              }
+            }}
+            className="text-brand-light hover:text-brand-light/80 transition-colors relative"
+            aria-label="Copy Link"
+          >
+            <svg 
+              className={`w-6 h-6 transition-all duration-200 ${
+                copySuccess ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
+              }`} 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <svg 
+              className={`w-6 h-6 absolute inset-0 text-green-400 transition-all duration-200 ${
+                copySuccess ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+              }`} 
+              viewBox="0 0 24 24" 
+              fill="currentColor"
+            >
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+          </button>
         </div>
       </section>
 

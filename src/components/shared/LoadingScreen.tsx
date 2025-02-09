@@ -47,7 +47,7 @@ export default function LoadingScreen() {
           />
         </div>
         <div className="text-sm text-gray-600">
-          {loadingPercentage}% ({loadedAssets}/{totalAssets} assets)
+          {loadingPercentage}%
         </div>
       </div>
     </div>
