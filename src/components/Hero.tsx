@@ -222,21 +222,21 @@ export function Hero({ property }: HeroProps) {
         {/* Top Section - Property Address */}
         <div ref={topSectionRef} className="pt-[60px] sm:pt-[80px] will-change-transform">
           {/* Agency Logo */}
-          <div ref={logoRef} className="hidden md:flex justify-center mb-4">
+          <div ref={logoRef} className="flex justify-center mb-4">
             {property.agency_settings?.branding?.logo?.light && (
               <Image
                 src={property.agency_settings.branding.logo.light}
                 alt={property.agency_name || 'Agency Logo'}
                 width={160}
                 height={40}
-                className="h-auto w-auto object-contain"
+                className="h-auto w-[140px] sm:w-[160px] object-contain"
                 priority
               />
             )}
           </div>
 
-          <h2 ref={addressRef} className="text-lg sm:text-xl md:text-2xl font-light mb-2 text-brand-light">{property.street_address}</h2>
-          <h3 ref={suburbRef} className="text-2xl sm:text-3xl md:text-5xl font-light text-brand-light">{property.suburb}</h3>
+          <h2 ref={addressRef} className="text-xl sm:text-2xl md:text-3xl font-light mb-2 text-brand-light">{property.street_address}</h2>
+          <h3 ref={suburbRef} className="text-3xl sm:text-4xl md:text-6xl font-light text-brand-light">{property.suburb}</h3>
         </div>
         
         {/* Bottom Section */}
