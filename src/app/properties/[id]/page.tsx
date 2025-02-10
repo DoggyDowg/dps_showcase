@@ -5,9 +5,6 @@ import { useProperty } from '@/hooks/useProperty'
 import { CuscoTemplate } from '@/templates/cusco/page'
 import { DubaiTemplate } from '@/templates/dubai/page'
 import { useEffect } from 'react'
-import { generateMetadata } from './metadata'
-
-export { generateMetadata }
 
 interface PropertyPageProps {
   params: Promise<{
