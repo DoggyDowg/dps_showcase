@@ -25,6 +25,8 @@ export interface Property {
     lng: number;
   };
   address: string;
+  id: string;
+  is_demo: boolean;
 }
 
 export interface Landmark {

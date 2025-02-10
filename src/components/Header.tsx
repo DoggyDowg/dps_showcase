@@ -46,7 +46,7 @@ export function Header({ property }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="relative flex items-center justify-between h-20">
           {/* Left Navigation Group */}
-          <div className="hidden md:flex items-center gap-4 lg:gap-6">
+          <div className="hidden nav:flex items-center gap-4 lg:gap-6">
             <HeaderLink href="#features">Features</HeaderLink>
             <HeaderLink href="#lifestyle">Lifestyle</HeaderLink>
             <HeaderLink href="#neighbourhood">Neighbourhood</HeaderLink>
@@ -76,14 +76,14 @@ export function Header({ property }: HeaderProps) {
           </div>
 
           {/* Right Navigation Group */}
-          <div className="hidden md:flex items-center gap-4 lg:gap-6">
+          <div className="hidden nav:flex items-center gap-4 lg:gap-6">
             <HeaderLink href="#info">Info</HeaderLink>
             <HeaderLink href="#viewings">Viewings</HeaderLink>
             <HeaderLink href="#contact">Make an Enquiry</HeaderLink>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="nav:hidden">
             <button 
               type="button"
               aria-label="Menu"

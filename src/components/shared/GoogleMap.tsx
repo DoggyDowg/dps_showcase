@@ -5,6 +5,7 @@ import type { GoogleMapProps, Landmark, LandmarkType } from '@/types/maps';
 import { LANDMARK_TYPES, PROPERTY_MARKER_COLOR, getLandmarkTypeConfig } from '@/utils/landmarkTypes';
 import * as React from 'react';
 import Image from 'next/image';
+import { useFooterImage } from '@/hooks/useFooterImage';
 
 const mapOptions: google.maps.MapOptions = {
   disableDefaultUI: false,
@@ -58,6 +59,7 @@ export function GoogleMap({
   const [allowTransitions, setAllowTransitions] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
   const listViewRef = useRef<HTMLDivElement>(null);
+  const { imageUrl, loading } = useFooterImage(property?.id, property?.is_demo);
 
   // Handle window width
   useEffect(() => {
@@ -353,13 +355,21 @@ export function GoogleMap({
                   onCloseClick={() => setShowPropertyInfo(false)}
                 >
                   <div className="max-w-sm">
-                    <Image 
-                      src="/images/footer/4247018-596532-1620x1080.jpg" 
-                      alt={property.name}
-                      width={480}
-                      height={320}
-                      className="w-full h-48 object-cover rounded-lg mb-3"
-                    />
+                    {loading ? (
+                      <div className="w-full h-48 bg-gray-800 animate-pulse rounded-lg mb-3" />
+                    ) : imageUrl ? (
+                      <Image 
+                        src={imageUrl}
+                        alt={property.name}
+                        width={480}
+                        height={320}
+                        className="w-full h-48 object-cover rounded-lg mb-3"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-800 flex items-center justify-center rounded-lg mb-3">
+                        <p className="text-white/50">No image available</p>
+                      </div>
+                    )}
                     <h3 className="font-heading text-lg mb-2">{property.name}</h3>
                     <p className="font-paragraph text-gray-600">{property.address}</p>
                   </div>

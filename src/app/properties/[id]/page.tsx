@@ -5,6 +5,9 @@ import { useProperty } from '@/hooks/useProperty'
 import { CuscoTemplate } from '@/templates/cusco/page'
 import { DubaiTemplate } from '@/templates/dubai/page'
 import { useEffect } from 'react'
+import { generateMetadata } from './metadata'
+
+export { generateMetadata }
 
 interface PropertyPageProps {
   params: Promise<{
@@ -16,7 +19,7 @@ export default function PropertyPage({ params }: PropertyPageProps) {
   const { id } = use(params)
   const { property, loading, error } = useProperty(id)
 
-  // Set favicon and title dynamically based on property data
+  // Set favicon dynamically based on property data
   useEffect(() => {
     // Find existing favicon links
     const links = document.querySelectorAll("link[rel*='icon']")
@@ -37,21 +40,6 @@ export default function PropertyPage({ params }: PropertyPageProps) {
       appleTouchIcon.rel = 'apple-touch-icon'
       appleTouchIcon.href = property.agency_settings.branding.favicon
       document.head.appendChild(appleTouchIcon)
-    }
-
-    // Set page title
-    if (property) {
-      // Use SEO title if available, otherwise fallback to property name and suburb
-      const seoTitle = property.content?.seo?.title
-      const defaultTitle = `${property.name} - ${property.suburb}`
-      const agencyName = property.agency_name || property.agency_settings?.copyright?.split('©')?.[1]?.trim() || ''
-      
-      // Construct title with agency name if available
-      const pageTitle = agencyName 
-        ? `${seoTitle || defaultTitle} | ${agencyName}`
-        : seoTitle || defaultTitle
-
-      document.title = pageTitle
     }
   }, [property])
 
