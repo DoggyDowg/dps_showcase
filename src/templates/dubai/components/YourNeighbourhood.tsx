@@ -119,7 +119,9 @@ export function YourNeighbourhood({ property }: YourNeighbourhoodProps) {
         setMapProperty({
           name: property.name,
           position: data.property.position,
-          address: data.property.address
+          address: data.property.address,
+          id: property.id,
+          is_demo: property.is_demo
         })
       } catch (err) {
         console.error('Error loading landmarks:', err)
