@@ -211,7 +211,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
             <button
               key={link.label}
               onClick={() => handleShare(link.shareUrl, link.label)}
-              className="text-brand-light hover:text-brand-light/80 transition-colors"
+              className="text-brand-light hover:text-brand-light/80 transition-all duration-200 hover:scale-110"
               aria-label={`Share on ${link.label}`}
             >
               <link.icon className="w-6 h-6" />
@@ -224,7 +224,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
               const body = encodeURIComponent(`I thought you might be interested in this property: ${window.location.href}`)
               window.location.href = `mailto:?subject=${subject}&body=${body}`
             }}
-            className="text-brand-light hover:text-brand-light/80 transition-colors"
+            className="text-brand-light hover:text-brand-light/80 transition-all duration-200 hover:scale-110"
             aria-label="Share via Email"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -242,7 +242,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
                 console.error('Failed to copy:', err)
               }
             }}
-            className="text-brand-light hover:text-brand-light/80 transition-colors relative"
+            className="text-brand-light hover:text-brand-light/80 transition-all duration-200 hover:scale-110 relative"
             aria-label="Copy Link"
           >
             <svg 
