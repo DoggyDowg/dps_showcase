@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { getProperty } from '@/utils/propertyUtils'
+import { getGalleryImages } from '@/utils/galleryUtils'
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   // Get property data
@@ -14,8 +15,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   const agencyName = property.agency_name || property.agency_settings?.copyright?.split('©')?.[1]?.trim() || ''
   
-  // Get the first gallery image or footer image for OG image
-  const ogImage = property.gallery_images?.[0]?.src || property.footer_image?.src
+  // Get the first gallery image for OG image
+  const galleryImages = await getGalleryImages(property.id)
+  const ogImage = galleryImages?.[0]?.src || property.agency_settings?.branding?.logo?.dark
 
   // Get the base URL for this property
   // First try property's custom domain, then deployment URL, then fallback to env variable
@@ -44,7 +46,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       locale: 'en_AU',
       type: 'website',
       siteName: agencyName,
-      url: `${baseUrl}/properties/${params.id}`, // Add the full URL
+      url: `${baseUrl}/properties/${params.id}`,
     },
     
     // Use OG content for Twitter as well
