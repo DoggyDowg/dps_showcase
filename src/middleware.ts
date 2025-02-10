@@ -1,39 +1,48 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  
-  // Add pathname to headers for server-side access
-  res.headers.set('x-pathname', req.nextUrl.pathname)
-  
-  const supabase = createMiddlewareClient({ req, res })
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+export async function middleware(request: NextRequest) {
+  const hostname = request.headers.get('host')
 
-  // Auth condition
-  if (req.nextUrl.pathname.startsWith('/admin')) {
-    if (!session) {
-      // If there's no session and we're not already on the login page
-      if (req.nextUrl.pathname !== '/admin/login') {
-        const redirectUrl = new URL('/admin/login', req.url)
-        return NextResponse.redirect(redirectUrl)
-      }
-    } else {
-      // If there's a session and we're on the login page
-      if (req.nextUrl.pathname === '/admin/login') {
-        const redirectUrl = new URL('/admin', req.url)
-        return NextResponse.redirect(redirectUrl)
+  try {
+    // Query Supabase for property with matching custom domain
+    const { data: property } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('custom_domain', hostname)
+      .single()
+
+    if (property) {
+      // If on root path and property found, redirect to property page
+      if (request.nextUrl.pathname === '/') {
+        return NextResponse.redirect(new URL(`/properties/${property.id}`, request.url))
       }
     }
+  } catch (error) {
+    console.error('Error in middleware:', error)
   }
 
-  return res
+  // Continue with the request if no redirect needed
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: [
+    /*
+     * Match all request paths except for:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+  ],
 } 
