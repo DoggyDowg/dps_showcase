@@ -20,6 +20,7 @@ export function BrandFontInitializer({ property }: BrandFontInitializerProps) {
         // Load body font
         const bodyFontResponse = await fetch(bodyFont.url)
         if (!bodyFontResponse.ok) {
+          console.error(`Failed to fetch body font: ${bodyFontResponse.status} ${bodyFontResponse.statusText}`)
           throw new Error(`Failed to fetch body font: ${bodyFontResponse.status} ${bodyFontResponse.statusText}`)
         }
         const bodyFontBlob = await bodyFontResponse.blob()
@@ -28,17 +29,27 @@ export function BrandFontInitializer({ property }: BrandFontInitializerProps) {
         // Load heading font
         const headingFontResponse = await fetch(headingFont.url)
         if (!headingFontResponse.ok) {
+          console.error(`Failed to fetch heading font: ${headingFontResponse.status} ${headingFontResponse.statusText}`)
           throw new Error(`Failed to fetch heading font: ${headingFontResponse.status} ${headingFontResponse.statusText}`)
         }
         const headingFontBlob = await headingFontResponse.blob()
         const headingFontUrl = URL.createObjectURL(headingFontBlob)
+
+        // Helper function to determine font format
+        const getFontFormat = (url: string) => {
+          if (url.endsWith('.woff2')) return 'woff2'
+          if (url.endsWith('.woff')) return 'woff'
+          if (url.endsWith('.ttf')) return 'truetype'
+          if (url.endsWith('.otf')) return 'opentype'
+          return 'truetype' // default
+        }
 
         // Create style element
         const style = document.createElement('style')
         style.textContent = `
           @font-face {
             font-family: 'Agency Body Font';
-            src: url('${bodyFontUrl}') format('truetype');
+            src: url('${bodyFontUrl}') format('${getFontFormat(bodyFont.url)}');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -46,7 +57,7 @@ export function BrandFontInitializer({ property }: BrandFontInitializerProps) {
 
           @font-face {
             font-family: 'Agency Heading Font';
-            src: url('${headingFontUrl}') format('truetype');
+            src: url('${headingFontUrl}') format('${getFontFormat(headingFont.url)}');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -60,12 +71,20 @@ export function BrandFontInitializer({ property }: BrandFontInitializerProps) {
 
         document.head.appendChild(style)
 
+        console.log('Fonts loaded successfully:', {
+          bodyFont: bodyFont.url,
+          headingFont: headingFont.url,
+          bodyFormat: getFontFormat(bodyFont.url),
+          headingFormat: getFontFormat(headingFont.url)
+        })
+
         return () => {
           document.head.removeChild(style)
           URL.revokeObjectURL(bodyFontUrl)
           URL.revokeObjectURL(headingFontUrl)
         }
-      } catch {
+      } catch (error) {
+        console.error('Error loading fonts:', error)
         return () => {}
       }
     }

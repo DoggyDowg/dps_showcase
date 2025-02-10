@@ -82,7 +82,9 @@ export default function LocationsAdmin() {
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng()
           },
-          address: place.formatted_address || ''
+          address: place.formatted_address || '',
+          id: place.place_id || crypto.randomUUID(),
+          is_demo: false
         };
 
         setState(prev => ({
@@ -120,7 +122,9 @@ export default function LocationsAdmin() {
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng()
           },
-          address: place.formatted_address || ''
+          address: place.formatted_address || '',
+          id: place.place_id || crypto.randomUUID(),
+          is_demo: false
         };
 
         setState(prev => ({
