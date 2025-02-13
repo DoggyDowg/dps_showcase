@@ -7,6 +7,22 @@ import { HomeGallery } from './HomeGallery'
 import { useFeaturesBanner } from '@/hooks/useFeaturesBanner'
 import { useYourHomeImage } from '@/hooks/useYourHomeImage'
 import type { Property } from '@/types/property'
+import dynamic from 'next/dynamic'
+
+// Dynamically import the VirtualTourSection
+const VirtualTourSection = dynamic(
+  () => import('./virtual-tour/VirtualTourSection'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[600px] animate-pulse bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-semibold text-gray-600">Loading Virtual Tour...</div>
+        </div>
+      </div>
+    )
+  }
+)
 
 interface YourHomeProps {
   property: Property
@@ -19,10 +35,16 @@ export function YourHome({ property }: YourHomeProps) {
   const [isFeaturesVisible, setIsFeaturesVisible] = useState(false)
   const { imageUrl: bannerUrl, loading: bannerLoading } = useFeaturesBanner(property.id, property.is_demo)
   const { imageUrl: homeImageUrl, loading: homeImageLoading } = useYourHomeImage(property.id, property.is_demo)
-
-  // Use the property data from Supabase
   const { content } = property
-  const features = content.features || { items: [], header: '', headline: '', description: '' }
+  const featuresData = content.features || { items: [], header: '', headline: '', description: '' }
+
+  // Debug log for virtual tour
+  useEffect(() => {
+    console.log('YourHome render - property:', {
+      id: property.id,
+      is_demo: property.is_demo
+    });
+  }, [property]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -75,7 +97,7 @@ export function YourHome({ property }: YourHomeProps) {
       <div id="features">
         <ParallaxBanner
           imageSrc={bannerUrl || '/images/banners/yourhome.jpg'}
-          title={features.banner_title || "YOUR HOME"}
+          title={featuresData.banner_title || "YOUR HOME"}
           loading={bannerLoading}
         />
       </div>
@@ -93,8 +115,8 @@ export function YourHome({ property }: YourHomeProps) {
                 transform: `translateY(${isVisible ? '0' : '40px'})`
               }}
             >
-              <h3 className="text-3xl font-light mb-6 text-brand-dark">{features.headline}</h3>
-              <p className="text-brand-dark">{features.description || features.header}</p>
+              <h3 className="text-3xl font-light mb-6 text-brand-dark">{featuresData.headline}</h3>
+              <p className="text-brand-dark">{featuresData.description || featuresData.header}</p>
             </div>
 
             {/* Right Column - Image */}
@@ -151,7 +173,7 @@ export function YourHome({ property }: YourHomeProps) {
           <div ref={featuresRef} className="max-w-7xl mx-auto mb-8">
             <h4 className="text-2xl font-light mb-4 text-brand-light text-center">Home Highlights</h4>
             <div className="flex flex-wrap justify-center gap-3">
-              {features.items?.filter(item => item.feature?.trim()).map((feature, index) => (
+              {featuresData.items?.filter(item => item.feature?.trim()).map((feature, index) => (
                 <div 
                   key={index}
                   className="[background-color:rgb(var(--brand-light)/0.1)] [border-color:rgb(var(--brand-light)/0.2)] backdrop-blur-sm px-4 py-2 rounded-full shadow-sm text-brand-light text-center font-light border inline-block text-sm transition-all duration-800"
@@ -171,6 +193,13 @@ export function YourHome({ property }: YourHomeProps) {
           <div className="max-w-7xl mx-auto">
             <HomeGallery property={property} />
           </div>
+        </div>
+      </section>
+
+      {/* Virtual Tour Section */}
+      <section id="virtual-tour" className="bg-white">
+        <div className="max-w-7xl mx-auto w-full">
+          <VirtualTourSection property={property} />
         </div>
       </section>
     </div>
