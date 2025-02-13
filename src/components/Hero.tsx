@@ -15,6 +15,26 @@ interface HeroProps {
   property: Property
 }
 
+function scrollToSection(sectionId: string) {
+  // Remove any leading # if present
+  const targetId = sectionId.replace(/^#/, '');
+  console.log('Looking for section with ID:', targetId);
+  
+  // Try both with and without virtual- prefix
+  let element = document.getElementById(targetId);
+  if (!element && !targetId.startsWith('virtual-')) {
+    element = document.getElementById(`virtual-${targetId}`);
+  }
+  
+  console.log('Found element:', element);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth' });
+    return true;
+  }
+  console.warn(`No element found with id "${targetId}" or "virtual-${targetId}"`);
+  return false;
+}
+
 export function Hero({ property }: HeroProps) {
   // For demo properties, use the full path to the demo video
   const heroVideoPath = property.is_demo 
@@ -247,11 +267,16 @@ export function Hero({ property }: HeroProps) {
             <button 
               className={`${styles.slideEffect} px-8 py-3 text-brand-light bg-brand-dark active:translate-y-[3px]`}
               onClick={() => {
-                const primaryBtn = property.metadata?.more_info?.ctaButtons?.primary
+                console.log('Primary button clicked');
+                const primaryBtn = property.metadata?.more_info?.ctaButtons?.primary;
+                console.log('Primary button config:', primaryBtn);
+                
                 if (primaryBtn?.type === 'anchor' && primaryBtn.url) {
-                  document.getElementById(primaryBtn.url)?.scrollIntoView({ behavior: 'smooth' })
+                  scrollToSection(primaryBtn.url);
                 } else if (primaryBtn?.url) {
-                  window.open(primaryBtn.url, '_blank')
+                  window.open(primaryBtn.url, '_blank');
+                } else {
+                  console.log('No valid URL or type configured');
                 }
               }}
             >
@@ -262,11 +287,16 @@ export function Hero({ property }: HeroProps) {
             <button 
               className={`${styles.slideEffectReverse} px-8 py-3 text-brand-light active:translate-y-[3px]`}
               onClick={() => {
-                const secondaryBtn = property.metadata?.more_info?.ctaButtons?.secondary
+                console.log('Secondary button clicked');
+                const secondaryBtn = property.metadata?.more_info?.ctaButtons?.secondary;
+                console.log('Secondary button config:', secondaryBtn);
+                
                 if (secondaryBtn?.type === 'anchor' && secondaryBtn.url) {
-                  document.getElementById(secondaryBtn.url)?.scrollIntoView({ behavior: 'smooth' })
+                  scrollToSection(secondaryBtn.url);
                 } else if (secondaryBtn?.url) {
-                  window.open(secondaryBtn.url, '_blank')
+                  window.open(secondaryBtn.url, '_blank');
+                } else {
+                  console.log('No valid URL or type configured');
                 }
               }}
             >

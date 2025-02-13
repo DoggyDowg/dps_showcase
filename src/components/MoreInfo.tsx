@@ -7,6 +7,7 @@ import styles from '@/styles/DocumentLink.module.css'
 import { PlayIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useMoreInfoVideo } from '@/hooks/useMoreInfoVideo'
 import { useMoreInfoFloorplans } from '@/hooks/useMoreInfoFloorplans'
+import { PDFPreview } from '@/components/shared/PDFPreview'
 import type { Asset } from '@/types/assets'
 import type { Property } from '@/types/property'
 
@@ -272,12 +273,19 @@ export function MoreInfo({ property }: MoreInfoProps) {
                     ))}
                   </div>
                 )}
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${selectedFloorplan?.storage_path}`}
-                  alt="Property Floorplan"
-                  fill
-                  className="object-contain transition-all duration-300 group-hover:scale-105"
-                />
+                {selectedFloorplan?.type === 'pdf' ? (
+                  <PDFPreview 
+                    url={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${selectedFloorplan.storage_path}`}
+                    className="transition-all duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <Image
+                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${selectedFloorplan?.storage_path}`}
+                    alt="Property Floorplan"
+                    fill
+                    className="object-contain transition-all duration-300 group-hover:scale-105"
+                  />
+                )}
                 <div className="absolute inset-0 flex items-center justify-center transition-all">
                   <span className="bg-brand-light/90 backdrop-blur-sm px-4 py-2 rounded shadow-sm text-brand-dark text-sm group-hover:scale-105 transition-all duration-150">
                     Click to enlarge
@@ -346,12 +354,29 @@ export function MoreInfo({ property }: MoreInfoProps) {
                 ))}
               </div>
             )}
-            <Image
-              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${selectedFloorplan.storage_path}`}
-              alt="Property Floorplan"
-              fill
-              className="object-contain"
-            />
+            {selectedFloorplan.type === 'pdf' ? (
+              <div className="relative h-full">
+                <PDFPreview 
+                  url={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${selectedFloorplan.storage_path}`}
+                />
+                <a
+                  href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${selectedFloorplan.storage_path}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 bg-brand-light text-brand-dark rounded-lg hover:bg-brand-light/90 transition-colors text-lg font-medium"
+                >
+                  Open PDF in New Tab
+                </a>
+              </div>
+            ) : (
+              <Image
+                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${selectedFloorplan.storage_path}`}
+                alt="Property Floorplan"
+                fill
+                className="object-contain"
+              />
+            )}
             <button
               className="absolute top-4 right-4 text-brand-light hover:scale-110 transition-all duration-150 cursor-pointer"
               onClick={(e) => {

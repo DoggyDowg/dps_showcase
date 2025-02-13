@@ -36,22 +36,20 @@ export function use3DTour(propertyId: string, isDemo: boolean) {
 
           if (glbFile) {
             const filePath = `demo/3d_tours/${glbFile.name}`;
-            const { data: { publicUrl }, error: urlError } = supabase
+            const { data } = supabase
               .storage
               .from('property-assets')
               .getPublicUrl(filePath);
 
-            if (urlError) throw urlError;
-
             console.log('Loading demo 3D tour:', {
               glbFile,
               filePath,
-              publicUrl
+              publicUrl: data.publicUrl
             });
 
-            const response = await fetch(publicUrl, { method: 'HEAD' });
+            const response = await fetch(data.publicUrl, { method: 'HEAD' });
             if (response.ok) {
-              setModelUrl(publicUrl);
+              setModelUrl(data.publicUrl);
               return;
             }
           }
@@ -63,7 +61,7 @@ export function use3DTour(propertyId: string, isDemo: boolean) {
             .from('assets')
             .select('*')
             .eq('property_id', propertyId)
-            .eq('category', '3d_tour')
+            .eq('category', '3d_tour' as const)
             .eq('type', 'glb')
             .eq('status', 'active')
             .single();
@@ -104,7 +102,7 @@ export function use3DTour(propertyId: string, isDemo: boolean) {
     }
 
     fetch3DTour();
-  }, [propertyId, isDemo]);
+  }, [propertyId, isDemo, supabase]);
 
   return { modelUrl, loading, error };
 } 

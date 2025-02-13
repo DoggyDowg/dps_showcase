@@ -18,7 +18,7 @@ import LoadingScreen from '@/components/shared/LoadingScreen'
 
 interface CuscoTemplateProps {
   propertyId: string
-  templateStyle?: 'cusco' | 'dubai' // Add template style prop
+  templateStyle?: 'cusco' | 'dubai'
 }
 
 export function CuscoTemplate({ propertyId, templateStyle = 'cusco' }: CuscoTemplateProps) {
@@ -46,7 +46,6 @@ export function CuscoTemplate({ propertyId, templateStyle = 'cusco' }: CuscoTemp
     )
   }
 
-  // Select Hero component based on template style
   const HeroComponent = templateStyle === 'dubai' ? DubaiHero : CuscoHero
 
   return (

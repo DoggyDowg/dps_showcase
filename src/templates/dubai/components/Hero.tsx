@@ -7,6 +7,7 @@ import styles from '@/styles/Hero.module.css'
 import type { Property } from '@/types/property'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
+import { HeaderLink } from '@/components/shared/HeaderLink'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -20,7 +21,6 @@ export function Hero({ property }: HeroProps) {
   // Refs for GSAP animations
   const addressRef = useRef<HTMLHeadingElement>(null)
   const suburbRef = useRef<HTMLHeadingElement>(null)
-  const ctaContainerRef = useRef<HTMLDivElement>(null)
   const headlineRef = useRef<HTMLHeadingElement>(null)
   const subheadlineRef = useRef<HTMLParagraphElement>(null)
   const logoRef = useRef<HTMLDivElement>(null)
@@ -56,7 +56,7 @@ export function Hero({ property }: HeroProps) {
     // Function to start initial animations
     const startAnimations = () => {
       // Initial state - set elements to be blurred and slightly translated
-      gsap.set([logoRef.current, addressRef.current, suburbRef.current, ctaContainerRef.current, headlineRef.current, subheadlineRef.current], {
+      gsap.set([logoRef.current, addressRef.current, suburbRef.current, headlineRef.current, subheadlineRef.current], {
         opacity: 0,
         y: 30,
         filter: 'blur(10px)'
@@ -95,12 +95,6 @@ export function Hero({ property }: HeroProps) {
         filter: 'blur(0px)',
         duration: 1.2
       }, '-=0.8')
-      .to(ctaContainerRef.current, {
-        opacity: 1,
-        y: 0,
-        filter: 'blur(0px)',
-        duration: 1.2
-      }, '-=0.8')
       .to(headlineRef.current, {
         opacity: 1,
         y: 0,
@@ -133,78 +127,123 @@ export function Hero({ property }: HeroProps) {
     }
   }, [])
 
+  function scrollToSection(sectionId: string) {
+    // Remove any leading # if present
+    const targetId = sectionId.replace(/^#/, '');
+    console.log('Looking for section with ID:', targetId);
+    
+    // Log all available section IDs first
+    const allSections = document.querySelectorAll('section[id]');
+    console.log('Available sections:', Array.from(allSections).map(section => ({
+      id: section.id,
+      visible: section instanceof HTMLElement ? section.offsetParent !== null : false,
+      display: window.getComputedStyle(section).display
+    })));
+    
+    // Try both with and without virtual- prefix
+    let element = document.getElementById(targetId);
+    if (!element && !targetId.startsWith('virtual-')) {
+      const alternativeId = `virtual-${targetId}`;
+      console.log('Element not found, trying alternative ID:', alternativeId);
+      element = document.getElementById(alternativeId);
+    }
+    
+    console.log('Found element:', element);
+    if (element) {
+      console.log('Scrolling to element...');
+      element.scrollIntoView({ behavior: 'smooth' });
+      return true;
+    }
+    
+    console.warn(`No element found with id "${targetId}" or "virtual-${targetId}"`);
+    return false;
+  }
+
   return (
-    <section className="relative min-h-screen w-full overflow-x-hidden">
+    <section className="relative h-screen w-full overflow-x-hidden">
       {/* Video Background */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
         {videoUrl ? (
           <>
             <video
-              className="absolute h-full w-full object-cover"
+              className="absolute h-[100vh] w-full object-cover pointer-events-none"
               autoPlay
               muted
               loop
               playsInline
               preload="auto"
+              style={{ position: 'fixed', top: 0, left: 0, zIndex: -2 }}
             >
               <source src={videoUrl} type="video/mp4" />
             </video>
-            {/* Single overlay that animates from black to semi-transparent */}
-            <div className="video-overlay absolute inset-0 bg-brand-dark transition-opacity duration-1000" style={{ opacity: 1 }} ref={el => {
-              if (el && !el.dataset.initialized) {
-                const videoElement = document.querySelector('video')
-                const startAnimation = () => {
-                  gsap.to(el, {
-                    opacity: 0.3,
-                    duration: 1,
-                    delay: 1,
-                    ease: "power2.inOut",
-                  })
-                }
-
-                if (videoElement) {
-                  if (videoElement.readyState >= 3) {
-                    startAnimation()
-                  } else {
-                    videoElement.addEventListener('loadeddata', startAnimation)
-                  }
-                }
-                el.dataset.initialized = 'true'
-              }
-            }} />
+            {/* Video overlay for fade effect */}
+            <div 
+              className="video-overlay absolute inset-0 bg-black/50 pointer-events-none" 
+              style={{ position: 'fixed', top: 0, left: 0, zIndex: -1 }} 
+            />
           </>
         ) : (
-          <div className="absolute inset-0 bg-brand-dark" />
+          <div className="absolute inset-0 bg-brand-dark pointer-events-none" />
         )}
       </div>
 
       {/* Content */}
-      <div className="relative flex flex-col text-brand-light text-center px-4 sm:px-6 lg:px-12 pt-10 md:pt-12 z-20 min-h-screen">
+      <div className="relative h-full flex flex-col text-brand-light text-center px-4 sm:px-6 lg:px-12 z-10">
         {/* Initial Navigation */}
-        <div className="hidden md:block pt-4">
+        <div className="hidden md:block pt-8">
           <div className="max-w-7xl mx-auto">
             <div className="relative flex items-center justify-between">
               {/* Left Navigation Group */}
               <div className="flex items-center gap-8 lg:gap-12">
-                <a href="#features" className="text-brand-light hover:text-brand-light/80 transition-colors font-light text-sm sm:text-[15px] xl:text-base">Features</a>
-                <a href="#lifestyle" className="text-brand-light hover:text-brand-light/80 transition-colors font-light text-sm sm:text-[15px] xl:text-base">Lifestyle</a>
-                <a href="#neighbourhood" className="text-brand-light hover:text-brand-light/80 transition-colors font-light text-sm sm:text-[15px] xl:text-base">Neighbourhood</a>
+                <HeaderLink 
+                  href="#features" 
+                  className="!text-brand-light hover:!text-brand-light/80 after:!bg-brand-light [&::before]:!bg-brand-light"
+                >
+                  Features
+                </HeaderLink>
+                <HeaderLink 
+                  href="#lifestyle" 
+                  className="!text-brand-light hover:!text-brand-light/80 after:!bg-brand-light [&::before]:!bg-brand-light"
+                >
+                  Lifestyle
+                </HeaderLink>
+                <HeaderLink 
+                  href="#neighbourhood" 
+                  className="!text-brand-light hover:!text-brand-light/80 after:!bg-brand-light [&::before]:!bg-brand-light"
+                >
+                  Neighbourhood
+                </HeaderLink>
               </div>
 
               {/* Right Navigation Group */}
               <div className="flex items-center gap-8 lg:gap-12">
-                <a href="#info" className="text-brand-light hover:text-brand-light/80 transition-colors font-light text-sm sm:text-[15px] xl:text-base">Info</a>
-                <a href="#viewings" className="text-brand-light hover:text-brand-light/80 transition-colors font-light text-sm sm:text-[15px] xl:text-base">Viewings</a>
-                <a href="#contact" className="text-brand-light hover:text-brand-light/80 transition-colors font-light text-sm sm:text-[15px] xl:text-base">Make an Enquiry</a>
+                <HeaderLink 
+                  href="#info" 
+                  className="!text-brand-light hover:!text-brand-light/80 after:!bg-brand-light [&::before]:!bg-brand-light"
+                >
+                  Info
+                </HeaderLink>
+                <HeaderLink 
+                  href="#viewings" 
+                  className="!text-brand-light hover:!text-brand-light/80 after:!bg-brand-light [&::before]:!bg-brand-light"
+                >
+                  Viewings
+                </HeaderLink>
+                <HeaderLink 
+                  href="#contact" 
+                  className="!text-brand-light hover:!text-brand-light/80 after:!bg-brand-light [&::before]:!bg-brand-light"
+                >
+                  Make an Enquiry
+                </HeaderLink>
               </div>
             </div>
           </div>
         </div>
 
         {/* Top Section - Logo and Address */}
-        <div ref={topSectionRef} className="mt-12 will-change-transform">
+        <div ref={topSectionRef} className="mt-12 will-change-transform relative z-10 pointer-events-none">
           {/* Agency Logo */}
-          <div ref={logoRef} className="hidden md:flex justify-center mb-4">
+          <div ref={logoRef} className="hidden md:flex justify-center mb-4 pointer-events-none">
             {property.agency_settings?.branding?.logo?.light && (
               <Image
                 src={property.agency_settings.branding.logo.light}
@@ -218,47 +257,59 @@ export function Hero({ property }: HeroProps) {
           </div>
 
           {/* Property Address */}
-          <h2 ref={addressRef} className="text-lg sm:text-xl md:text-2xl font-light mb-2 text-brand-light">{property.street_address}</h2>
-          <h3 ref={suburbRef} className="text-2xl sm:text-3xl md:text-5xl font-light text-brand-light">{property.suburb}</h3>
+          <h2 ref={addressRef} className="text-lg sm:text-xl md:text-2xl font-light mb-2 text-brand-light pointer-events-none">{property.street_address}</h2>
+          <h3 ref={suburbRef} className="text-2xl sm:text-3xl md:text-5xl font-light text-brand-light pointer-events-none">{property.suburb}</h3>
         </div>
         
         {/* Bottom Section - CTAs and Headlines */}
-        <div className="mt-auto pb-16 sm:pb-20">
+        <div className="mt-auto pb-16 sm:pb-20 relative z-10">
           {/* CTA Buttons */}
-          <div ref={ctaContainerRef} className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-8 relative z-50">
             {/* Left slide effect button */}
             <button 
-              className={`${styles.slideEffect} px-8 py-3 text-brand-light bg-brand-dark active:translate-y-[3px]`}
+              type="button"
               onClick={() => {
-                const primaryBtn = property.metadata?.more_info?.ctaButtons?.primary
+                console.log('Primary button clicked');
+                const primaryBtn = property.metadata?.more_info?.ctaButtons?.primary;
+                console.log('Primary button config:', primaryBtn);
+                
                 if (primaryBtn?.type === 'anchor' && primaryBtn.url) {
-                  document.getElementById(primaryBtn.url)?.scrollIntoView({ behavior: 'smooth' })
-                } else if (primaryBtn?.url) {
-                  window.open(primaryBtn.url, '_blank')
+                  scrollToSection(primaryBtn.url);
+                } else if (primaryBtn?.type === 'link' && primaryBtn.url) {
+                  window.open(primaryBtn.url, '_blank');
+                } else if (primaryBtn?.type === 'download' && primaryBtn.url) {
+                  window.open(primaryBtn.url, '_self');
                 }
               }}
+              className={`${styles.slideEffect} px-8 py-3 text-brand-light bg-brand-dark active:translate-y-[3px] relative z-50 cursor-pointer`}
             >
-              {property.metadata?.more_info?.ctaButtons?.primary?.label || 'Book a Viewing'}
+              {property.metadata?.more_info?.ctaButtons?.primary?.label || 'Take a Tour'}
             </button>
 
             {/* Right slide effect button */}
             <button 
-              className={`${styles.slideEffectReverse} px-8 py-3 text-brand-light active:translate-y-[3px]`}
+              type="button"
               onClick={() => {
-                const secondaryBtn = property.metadata?.more_info?.ctaButtons?.secondary
+                console.log('Secondary button clicked');
+                const secondaryBtn = property.metadata?.more_info?.ctaButtons?.secondary;
+                console.log('Secondary button config:', secondaryBtn);
+                
                 if (secondaryBtn?.type === 'anchor' && secondaryBtn.url) {
-                  document.getElementById(secondaryBtn.url)?.scrollIntoView({ behavior: 'smooth' })
-                } else if (secondaryBtn?.url) {
-                  window.open(secondaryBtn.url, '_blank')
+                  scrollToSection(secondaryBtn.url);
+                } else if (secondaryBtn?.type === 'link' && secondaryBtn.url) {
+                  window.open(secondaryBtn.url, '_blank');
+                } else if (secondaryBtn?.type === 'download' && secondaryBtn.url) {
+                  window.open(secondaryBtn.url, '_self');
                 }
               }}
+              className={`${styles.slideEffectReverse} px-8 py-3 text-brand-light active:translate-y-[3px] relative z-50 cursor-pointer`}
             >
-              {property.metadata?.more_info?.ctaButtons?.secondary?.label || 'Download Brochure'}
+              {property.metadata?.more_info?.ctaButtons?.secondary?.label || 'Book a Viewing'}
             </button>
           </div>
 
           {/* Headline and Subheadline */}
-          <div>
+          <div className="pointer-events-none">
             <h1 ref={headlineRef} className="text-2xl sm:text-3xl md:text-5xl font-light mb-3 sm:mb-4 text-brand-light">
               {property.content.hero.headline}
             </h1>

@@ -30,11 +30,13 @@ interface UploadZoneProps {
 function UploadZone({ category, config, onDrop, isAtCapacity }: UploadZoneProps) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (files) => onDrop(files, category),
-    accept: config.acceptedTypes.includes('image') && config.acceptedTypes.includes('video')
-      ? { 'image/*': [], 'video/*': [] }
-      : config.acceptedTypes.includes('image')
-      ? { 'image/*': [] }
-      : { 'video/*': [] },
+    accept: config.acceptedTypes.reduce((acc, type) => {
+      if (type === 'image') acc['image/*'] = [];
+      if (type === 'video') acc['video/*'] = [];
+      if (type === 'pdf') acc['application/pdf'] = [];
+      if (type === 'glb') acc['model/gltf-binary'] = ['.glb'];
+      return acc;
+    }, {} as Record<string, string[]>),
     maxFiles: config.maxFiles,
     disabled: isAtCapacity
   });
@@ -60,7 +62,13 @@ function UploadZone({ category, config, onDrop, isAtCapacity }: UploadZoneProps)
           ? `Maximum ${config.maxFiles} file${config.maxFiles > 1 ? 's' : ''} reached` 
           : isDragActive 
             ? 'Drop files here' 
-            : 'Drag files here or click to select'
+            : `Drag files here or click to select (${config.acceptedTypes.map(type => {
+              switch(type) {
+                case 'pdf': return 'PDF';
+                case 'glb': return 'GLB';
+                default: return type;
+              }
+            }).join(', ')})`
         }
       </p>
       {isAtCapacity && (
@@ -83,7 +91,8 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
     features_banner: undefined,
     lifestyle_banner: undefined,
     neighbourhood_banner: undefined,
-    property_logo: undefined
+    property_logo: undefined,
+    '3d_tour': []
   });
   const [uploadProgress, setUploadProgress] = useState<UploadProgress>({});
   const [error, setError] = useState<string>('');
@@ -115,13 +124,13 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
 
         // Group assets by category
         const grouped = data.reduce((acc: PropertyAssets, asset: Asset) => {
-          if (asset.category === 'gallery' || asset.category === 'neighbourhood' || asset.category === 'floorplan') {
+          if (asset.category === 'gallery' || asset.category === 'neighbourhood' || asset.category === 'floorplan' || asset.category === '3d_tour') {
             acc[asset.category] = [...(acc[asset.category] || []), asset];
           } else {
             acc[asset.category] = asset;
           }
           return acc;
-        }, { gallery: [], neighbourhood: [], floorplan: [] });
+        }, { gallery: [], neighbourhood: [], floorplan: [], '3d_tour': [] });
 
         setAssets(grouped);
       } catch (err) {
@@ -146,10 +155,10 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
     const config = ASSET_CATEGORY_CONFIG[category];
     
     // Check capacity for both multi-file and single-file categories
-    if (category === 'gallery' || category === 'neighbourhood') {
+    if (category === 'gallery' || category === 'neighbourhood' || category === 'floorplan') {
       const currentCount = assets[category]?.length || 0;
       if (currentCount >= config.maxFiles) {
-        toast.error(`Maximum ${config.maxFiles} files reached for ${config.label}. Please delete at least one image to continue.`);
+        toast.error(`Maximum ${config.maxFiles} files reached for ${config.label}. Please delete at least one file to continue.`);
         return;
       }
       if (currentCount + acceptedFiles.length > config.maxFiles) {
@@ -167,6 +176,22 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
       setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
 
       try {
+        // Validate file type
+        const fileType = file.type;
+        const isImage = fileType.startsWith('image/');
+        const isVideo = fileType.startsWith('video/');
+        const isPDF = fileType === 'application/pdf';
+        const isGLB = fileType === 'model/gltf-binary' || file.name.endsWith('.glb');
+        
+        if (!config.acceptedTypes.some(type => 
+          (type === 'image' && isImage) || 
+          (type === 'video' && isVideo) || 
+          (type === 'pdf' && isPDF) ||
+          (type === 'glb' && isGLB)
+        )) {
+          throw new Error(`Invalid file type. Accepted types for ${config.label}: ${config.acceptedTypes.join(', ')}`);
+        }
+
         // Generate a clean filename (remove special characters, spaces, etc)
         const cleanFileName = file.name.toLowerCase()
           .replace(/[^a-z0-9.]/g, '_')
@@ -217,12 +242,12 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
         const asset: Omit<Asset, 'id' | 'created_at' | 'updated_at'> = {
           property_id: propertyId,
           category,
-          type: file.type.startsWith('video/') ? 'video' : 'image',
+          type: isGLB ? 'glb' : isPDF ? 'pdf' : isVideo ? 'video' : 'image',
           filename: cleanFileName,
           storage_path: uploadData.path,
           status: 'active',
-          title: file.name.split('.')[0].replace(/_/g, ' '), // Add a human-readable title
-          alt_text: `${config.label} - ${file.name.split('.')[0].replace(/_/g, ' ')}` // Add descriptive alt text
+          title: file.name.split('.')[0].replace(/_/g, ' '),
+          alt_text: `${config.label} - ${file.name.split('.')[0].replace(/_/g, ' ')}`
         };
 
         console.log('Creating asset record:', asset);
@@ -238,6 +263,9 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
 
           if (!response.ok) {
             const error = await response.json();
+            if (isPDF && error.message?.includes('type')) {
+              throw new Error('PDF uploads are temporarily unavailable. Please contact support to enable this feature.');
+            }
             throw new Error(error.message || 'Failed to create asset record');
           }
 
@@ -246,18 +274,20 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
 
           // Update state
           setAssets(prev => {
-            if (category === 'gallery' || category === 'neighbourhood') {
+            if (category === 'gallery' || category === 'neighbourhood' || category === 'floorplan') {
               return {
                 ...prev,
-                [category]: prev[category].filter(a => a.id !== assetData.id)
+                [category]: [...(prev[category] || []), assetData]
               };
             }
-            const newAssets = { ...prev };
-            delete newAssets[category];
-            return newAssets;
+            return {
+              ...prev,
+              [category]: assetData
+            };
           });
 
           // Show success message
+          toast.success(`${file.name} uploaded successfully`);
           setError('');
           onSave?.();
         } catch (err) {
@@ -275,7 +305,7 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
             type: file.type
           }
         });
-        setError(err instanceof Error ? err.message : 'Failed to upload file');
+        toast.error(err instanceof Error ? err.message : 'Failed to upload file');
       } finally {
         setUploadProgress(prev => {
           const newProgress = { ...prev };
@@ -402,6 +432,40 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
                               controls
                               className="rounded-lg object-cover w-full aspect-video"
                             />
+                          ) : asset.type === 'pdf' ? (
+                            <div className="relative aspect-square bg-gray-100 rounded-lg flex flex-col items-center justify-center p-4">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-xs text-gray-600 text-center break-all">
+                                {asset.filename}
+                              </span>
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${asset.storage_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-2 text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                View PDF
+                              </a>
+                            </div>
+                          ) : asset.type === 'glb' ? (
+                            <div className="relative aspect-square bg-gray-100 rounded-lg flex flex-col items-center justify-center p-4">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                              </svg>
+                              <span className="text-xs text-gray-600 text-center break-all">
+                                {asset.filename}
+                              </span>
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-assets/${asset.storage_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-2 text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                Download GLB
+                              </a>
+                            </div>
                           ) : (
                             <div className="relative aspect-square">
                               <Image

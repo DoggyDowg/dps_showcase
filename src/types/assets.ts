@@ -1,6 +1,6 @@
 export type AssetCategory = 'hero_video' | 'gallery' | 'your_home' | 'neighbourhood' | 'footer' | 'floorplan' | 
-  'features_banner' | 'lifestyle_banner' | 'neighbourhood_banner' | 'property_logo';
-export type AssetType = 'image' | 'video';
+  'features_banner' | 'lifestyle_banner' | 'neighbourhood_banner' | 'property_logo' | '3d_tour';
+export type AssetType = 'image' | 'video' | 'pdf' | 'glb';
 
 export interface Asset {
   id: string;
@@ -49,6 +49,7 @@ export interface PropertyAssets {
   lifestyle_banner?: Asset;
   neighbourhood_banner?: Asset;
   property_logo?: Asset;
+  '3d_tour': Asset[];
 }
 
 // Configuration for each asset category
@@ -103,9 +104,9 @@ export const ASSET_CATEGORY_CONFIG: Record<AssetCategory, {
   floorplan: {
     label: 'Floorplan',
     maxFiles: 4,
-    acceptedTypes: ['image'],
+    acceptedTypes: ['image', 'pdf'],
     required: false,
-    description: 'Property floorplan images shown in the More Info section (up to 4)',
+    description: 'Property floorplan images or PDFs shown in the More Info section (up to 4). Accepts JPG, PNG, or PDF files.',
     directory: 'sections'
   },
   features_banner: {
@@ -139,5 +140,13 @@ export const ASSET_CATEGORY_CONFIG: Record<AssetCategory, {
     required: false,
     description: 'Property logo (must be PNG with transparent background, optimized for light backgrounds)',
     directory: 'logos'
+  },
+  '3d_tour': {
+    label: 'Virtual Tour',
+    maxFiles: 10,
+    acceptedTypes: ['glb'],
+    required: false,
+    description: 'GLB files for 3D virtual tours (up to 10 files)',
+    directory: '3d_tours'
   }
 }; 

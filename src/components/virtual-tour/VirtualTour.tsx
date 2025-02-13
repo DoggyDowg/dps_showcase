@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
@@ -16,10 +16,13 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // Store container reference for cleanup
+    const container = containerRef.current;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -28,7 +31,7 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
       90,  // Even wider FOV for super close-up view
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
+      container.clientWidth / container.clientHeight,
       0.001,  // Super close near plane
       1000
     );
@@ -40,16 +43,16 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
       antialias: true,
       alpha: true  // Enable transparency
     });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.8;  // Slightly darker exposure
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Controls setup
-    const controls = new OrbitControlsImpl(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
@@ -76,7 +79,7 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
       .setPath('/envmaps/')
       .load('royal_esplanade_1k.hdr', (texture: THREE.Texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
-        scene.environment = texture;  // Keep environment lighting
+        scene.environment = texture;
         scene.background = new THREE.Color(0xffffff);  // Use white background instead
       });
 
@@ -118,10 +121,11 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
         controls.update();
       },
       (progress: { loaded: number; total: number }) => {
-        console.log('Loading progress:', (progress.loaded / progress.total) * 100, '%');
+        const percent = (progress.loaded / progress.total) * 100;
+        console.log('Loading progress:', percent, '%');
       },
-      (err: unknown) => {
-        console.error('Error loading model:', err instanceof Error ? err.message : 'Unknown error');
+      (error: unknown) => {
+        console.error('Error loading model:', error instanceof Error ? error.message : 'Unknown error');
       }
     );
 
@@ -135,9 +139,9 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
 
     // Handle resize
     function handleResize() {
-      if (!containerRef.current) return;
-      const width = containerRef.current.clientWidth;
-      const height = containerRef.current.clientHeight;
+      if (!container) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
 
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
@@ -150,7 +154,9 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
       scene.clear();
-      containerRef.current?.removeChild(renderer.domElement);
+      if (container?.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [modelPath]);
 

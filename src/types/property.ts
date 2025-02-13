@@ -1,3 +1,5 @@
+import type { PropertyAssets } from './assets';
+
 export interface PropertyFeature {
   rank: number
   feature: string
@@ -173,4 +175,5 @@ export interface Property {
     }
     office_addresses?: OfficeAddress[]
   }
+  assets?: PropertyAssets
 }

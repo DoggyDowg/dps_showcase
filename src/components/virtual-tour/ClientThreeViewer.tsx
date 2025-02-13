@@ -1,237 +1,161 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
-interface Props {
+interface ClientThreeViewerProps {
   modelPath: string;
+  className?: string;
+  onLoad?: () => void;
+  onError?: (error: Error) => void;
 }
 
-export default function ClientThreeViewer({ modelPath }: Props) {
+export default function ClientThreeViewer({ 
+  modelPath, 
+  className = "", 
+  onLoad, 
+  onError 
+}: ClientThreeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const controlsRef = useRef<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingStatus, setLoadingStatus] = useState<string>('Preparing viewer...');
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    let frameId: number;
+    if (!containerRef.current) return;
 
-    async function init() {
-      try {
-        if (!containerRef.current) return;
+    // Store container reference for cleanup
+    const container = containerRef.current;
 
-        setLoadingStatus('Loading 3D environment...');
-        console.log('Loading Three.js modules...');
+    // Scene setup
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
 
-        // Dynamically import Three.js and related modules
-        const THREE = await import('three');
-        const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls');
-        const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader');
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      container.clientWidth / container.clientHeight,
+      0.1,
+      1000
+    );
+    camera.position.set(0, 1.6, 3); // Position camera at average human height
+    cameraRef.current = camera;
 
-        if (!mounted) return;
-        console.log('Modules loaded successfully');
-        setLoadingStatus('Setting up scene...');
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-        // Initialize scene
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000000);
+    // Controls setup
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 1;
+    controls.maxDistance = 10;
+    controls.maxPolarAngle = Math.PI / 2;
+    controlsRef.current = controls;
 
-        // Initialize camera with better default FOV
-        const camera = new THREE.PerspectiveCamera(
-          65, // Wider FOV for better viewing
-          containerRef.current.clientWidth / containerRef.current.clientHeight,
-          0.1,
-          1000
-        );
-        camera.position.set(0, 2, 5);
+    // Lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
 
-        // Initialize renderer with proper pixel ratio and better performance settings
-        const renderer = new THREE.WebGLRenderer({
-          antialias: true,
-          powerPreference: 'high-performance',
-          alpha: true
-        });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio for better performance
-        renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
-        containerRef.current.appendChild(renderer.domElement);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
 
-        // Enhanced lighting setup
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+    // Environment map
+    new RGBELoader()
+      .setPath('/envmaps/')
+      .load('royal_esplanade_1k.hdr', (texture: THREE.Texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = texture;
+        scene.background = texture;
+      });
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(10, 10, 5);
-        directionalLight.castShadow = true;
-        scene.add(directionalLight);
+    // Load model
+    const loader = new GLTFLoader();
+    loader.load(
+      modelPath,
+      (gltf) => {
+        // Center model
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const center = box.getCenter(new THREE.Vector3());
+        gltf.scene.position.x -= center.x;
+        gltf.scene.position.y -= center.y;
+        gltf.scene.position.z -= center.z;
 
-        // Add hemisphere light for better ambient illumination
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5);
-        scene.add(hemiLight);
+        // Scale model to reasonable size
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 2 / maxDim;
+        gltf.scene.scale.setScalar(scale);
 
-        // Load model
-        const loader = new GLTFLoader();
-        console.log('Loading model:', modelPath);
-        
-        loader.load(
-          modelPath,
-          (gltf) => {
-            if (!mounted) return;
-            console.log('Model loaded successfully');
+        scene.add(gltf.scene);
 
-            const box = new THREE.Box3().setFromObject(gltf.scene);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            
-            // Center the model
-            gltf.scene.position.sub(center);
-            scene.add(gltf.scene);
+        // Position camera to view entire model
+        const distance = maxDim * 2;
+        camera.position.set(distance, distance / 2, distance);
+        camera.lookAt(0, 0, 0);
+        controls.target.set(0, 0, 0);
+        controls.update();
 
-            // Position camera inside the model
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const fov = camera.fov * (Math.PI / 180);
-            const cameraDistance = maxDim * 0.4; // Reduced distance to be more "inside" the model
-            
-            // Position camera at a point inside the model
-            camera.position.set(
-              cameraDistance * 0.3, // Closer to center on X
-              maxDim * 0.2,        // Slightly elevated on Y
-              cameraDistance * 0.3  // Closer to center on Z
-            );
-            camera.lookAt(new THREE.Vector3(0, maxDim * 0.1, 0)); // Look slightly upward
-
-            // Initialize controls with enhanced settings
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controlsRef.current = controls;
-
-            // Enhanced controls configuration
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.rotateSpeed = 0.8;
-            controls.panSpeed = 0.8;
-            controls.zoomSpeed = 1.2;
-            controls.minDistance = maxDim * 0.1;
-            controls.maxDistance = maxDim * 2;
-            controls.maxPolarAngle = Math.PI * 0.85;
-            controls.target.set(0, maxDim * 0.1, 0); // Set target slightly above ground
-            controls.update();
-
-            // Double click to reset view
-            let lastClickTime = 0;
-            renderer.domElement.addEventListener('click', (event) => {
-              const currentTime = new Date().getTime();
-              if (currentTime - lastClickTime < 300) { // Double click threshold
-                resetView();
-              }
-              lastClickTime = currentTime;
-            });
-
-            // Double tap for mobile
-            renderer.domElement.addEventListener('touchend', (event) => {
-              const currentTime = new Date().getTime();
-              if (currentTime - lastClickTime < 300) {
-                resetView();
-                event.preventDefault(); // Prevent zoom
-              }
-              lastClickTime = currentTime;
-            });
-
-            function resetView() {
-              if (!controls) return;
-              
-              controls.reset();
-              camera.position.set(
-                cameraDistance * 0.3,
-                maxDim * 0.2,
-                cameraDistance * 0.3
-              );
-              camera.lookAt(new THREE.Vector3(0, maxDim * 0.1, 0));
-              controls.update();
-            }
-
-            // Animation loop with smooth controls
-            function animate() {
-              if (!mounted) return;
-              frameId = requestAnimationFrame(animate);
-              controls.update();
-              renderer.render(scene, camera);
-            }
-            animate();
-
-            // Enhanced resize handler
-            function handleResize() {
-              if (!containerRef.current || !mounted) return;
-              
-              const width = containerRef.current.clientWidth;
-              const height = containerRef.current.clientHeight;
-              
-              camera.aspect = width / height;
-              camera.updateProjectionMatrix();
-              renderer.setSize(width, height, false);
-              renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            }
-
-            window.addEventListener('resize', handleResize);
-            handleResize(); // Initial resize
-
-            setIsLoading(false);
-          },
-          (progress) => {
-            setLoadingStatus('Loading 3D model...');
-          },
-          (error) => {
-            console.error('Error loading model:', error);
-            setError(`Failed to load 3D model: ${error.message}`);
-            setIsLoading(false);
-          }
-        );
-
-      } catch (err) {
-        console.error('Setup error:', err);
-        if (mounted) {
-          setError(`Failed to initialize 3D viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
-          setIsLoading(false);
+        onLoad?.();
+      },
+      ({ loaded, total }: { loaded: number; total: number }) => {
+        console.log('Loading progress:', (loaded / total) * 100, '%');
+      },
+      (error: unknown) => {
+        console.error('Error loading model:', error);
+        if (error instanceof Error) {
+          onError?.(error);
+        } else {
+          onError?.(new Error(String(error)));
         }
       }
+    );
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
     }
+    animate();
 
-    init();
+    // Handle resize
+    function handleResize() {
+      if (!container) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
 
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
     return () => {
-      mounted = false;
-      if (frameId) {
-        cancelAnimationFrame(frameId);
-      }
-      if (controlsRef.current) {
-        controlsRef.current.dispose();
+      window.removeEventListener('resize', handleResize);
+      renderer.dispose();
+      scene.clear();
+      if (container?.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
     };
-  }, [modelPath]);
-
-  if (error) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-red-50">
-        <div className="text-center p-4">
-          <p className="text-red-600 font-semibold">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  }, [modelPath, onLoad, onError]);
 
   return (
-    <div className="absolute inset-0 w-full h-full">
-      <div ref={containerRef} className="w-full h-full" />
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75">
-          <div className="text-center">
-            <div className="text-lg font-semibold text-white mb-2">{loadingStatus}</div>
-            <div className="text-sm text-white/80">Please wait...</div>
-          </div>
-        </div>
-      )}
-    </div>
+    <div ref={containerRef} className={`w-full h-full ${className}`} />
   );
 } 

@@ -112,61 +112,61 @@ export type Database = {
       }
       assets: {
         Row: {
-          alt_text: string | null
-          category: Database["public"]["Enums"]["asset_category"]
-          created_at: string | null
-          description: string | null
-          display_order: number | null
-          filename: string
-          height: number | null
           id: string
-          property_id: string | null
-          status: string | null
+          property_id: string
+          created_at: string
+          updated_at: string
+          category: AssetCategory
+          type: AssetType
+          filename: string
           storage_path: string
           title: string | null
-          type: Database["public"]["Enums"]["asset_type"]
-          updated_at: string | null
-          video_duration: number | null
+          description: string | null
+          alt_text: string | null
+          display_order: number | null
           video_thumbnail_path: string | null
+          video_duration: number | null
           width: number | null
+          height: number | null
+          status: 'active' | 'inactive'
         }
         Insert: {
-          alt_text?: string | null
-          category: Database["public"]["Enums"]["asset_category"]
-          created_at?: string | null
-          description?: string | null
-          display_order?: number | null
-          filename: string
-          height?: number | null
           id?: string
-          property_id?: string | null
-          status?: string | null
+          property_id: string
+          created_at?: string
+          updated_at?: string
+          category: AssetCategory
+          type: AssetType
+          filename: string
           storage_path: string
           title?: string | null
-          type: Database["public"]["Enums"]["asset_type"]
-          updated_at?: string | null
-          video_duration?: number | null
+          description?: string | null
+          alt_text?: string | null
+          display_order?: number | null
           video_thumbnail_path?: string | null
+          video_duration?: number | null
           width?: number | null
+          height?: number | null
+          status?: 'active' | 'inactive'
         }
         Update: {
-          alt_text?: string | null
-          category?: Database["public"]["Enums"]["asset_category"]
-          created_at?: string | null
-          description?: string | null
-          display_order?: number | null
-          filename?: string
-          height?: number | null
           id?: string
-          property_id?: string | null
-          status?: string | null
+          property_id?: string
+          created_at?: string
+          updated_at?: string
+          category?: AssetCategory
+          type?: AssetType
+          filename?: string
           storage_path?: string
           title?: string | null
-          type?: Database["public"]["Enums"]["asset_type"]
-          updated_at?: string | null
-          video_duration?: number | null
+          description?: string | null
+          alt_text?: string | null
+          display_order?: number | null
           video_thumbnail_path?: string | null
+          video_duration?: number | null
           width?: number | null
+          height?: number | null
+          status?: 'active' | 'inactive'
         }
         Relationships: [
           {
@@ -398,18 +398,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      asset_category:
-        | "hero_video"
-        | "gallery"
-        | "your_home"
-        | "neighbourhood"
-        | "footer"
-        | "floorplan"
-        | "features_banner"
-        | "lifestyle_banner"
-        | "neighbourhood_banner"
-        | "property_logo"
-      asset_type: "image" | "video"
+      asset_category: 'hero_video' | 'gallery' | 'your_home' | 'neighbourhood' | 'footer' | 'floorplan' | 
+        'features_banner' | 'lifestyle_banner' | 'neighbourhood_banner' | 'property_logo' | '3d_tour'
+      asset_type: 'image' | 'video' | 'pdf' | 'glb'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -513,3 +504,6 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export type AssetCategory = Database['public']['Enums']['asset_category']
+export type AssetType = Database['public']['Enums']['asset_type']

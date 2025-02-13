@@ -1,6 +1,7 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
+import { debounce } from 'lodash'
 
 interface PropertyMoreInfoProps {
   propertyId: string
@@ -37,6 +38,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
     const supabase = createClientComponentClient()
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<Error | null>(null)
+    const handleSaveRef = useRef<(() => Promise<void>) | null>(null)
     const [moreInfo, setMoreInfo] = useState<MoreInfoData>({
       ctaButtons: {
         primary: { label: '', type: 'link', url: '' },
@@ -53,39 +55,47 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
           console.groupCollapsed('💾 More Info Component Save');
           console.log('Current state:', moreInfo);
 
-          // Create a deep copy of the state to clean
-          const cleanedMoreInfo = JSON.parse(JSON.stringify(moreInfo));
+          // Store the handleSave function in the ref
+          handleSaveRef.current = async () => {
+            // Create a deep copy of the state to clean
+            const cleanedMoreInfo = JSON.parse(JSON.stringify(moreInfo));
 
-          // Clean up the data before saving
-          cleanedMoreInfo.ctaButtons.primary = {
-            ...cleanedMoreInfo.ctaButtons.primary,
-            label: cleanedMoreInfo.ctaButtons.primary.label?.trim() || '',
-            url: cleanedMoreInfo.ctaButtons.primary.url?.trim() || ''
+            // Clean up the data before saving
+            cleanedMoreInfo.ctaButtons.primary = {
+              ...cleanedMoreInfo.ctaButtons.primary,
+              label: cleanedMoreInfo.ctaButtons.primary.label?.trim() || '',
+              url: cleanedMoreInfo.ctaButtons.primary.url?.trim() || ''
+            };
+            
+            cleanedMoreInfo.ctaButtons.secondary = {
+              ...cleanedMoreInfo.ctaButtons.secondary,
+              label: cleanedMoreInfo.ctaButtons.secondary.label?.trim() || '',
+              url: cleanedMoreInfo.ctaButtons.secondary.url?.trim() || ''
+            };
+            
+            // Clean documents array - keep all documents but trim their values
+            cleanedMoreInfo.documents = cleanedMoreInfo.documents.map((doc: DocumentItem) => ({
+              label: doc.label?.trim() || '',
+              url: doc.url?.trim() || ''
+            }));
+
+            console.log('Cleaned state before save:', {
+              ...cleanedMoreInfo,
+              documents: cleanedMoreInfo.documents
+            });
+
+            // Create the metadata structure and save
+            if (onSave) {
+              const metadata = { more_info: cleanedMoreInfo };
+              console.log('Saving metadata:', metadata);
+              await onSave(metadata);
+              console.log('Save completed successfully');
+            }
           };
-          
-          cleanedMoreInfo.ctaButtons.secondary = {
-            ...cleanedMoreInfo.ctaButtons.secondary,
-            label: cleanedMoreInfo.ctaButtons.secondary.label?.trim() || '',
-            url: cleanedMoreInfo.ctaButtons.secondary.url?.trim() || ''
-          };
-          
-          // Clean documents array - keep all documents but trim their values
-          cleanedMoreInfo.documents = cleanedMoreInfo.documents.map((doc: DocumentItem) => ({
-            label: doc.label?.trim() || '',
-            url: doc.url?.trim() || ''
-          }));
 
-          console.log('Cleaned state before save:', {
-            ...cleanedMoreInfo,
-            documents: cleanedMoreInfo.documents
-          });
-
-          // Create the metadata structure and save
-          if (onSave) {
-            const metadata = { more_info: cleanedMoreInfo };
-            console.log('Saving metadata:', metadata);
-            await onSave(metadata);
-            console.log('Save completed successfully');
+          // Call the stored function
+          if (handleSaveRef.current) {
+            await handleSaveRef.current();
           }
         } catch (err) {
           console.error('Save error:', err);
@@ -122,20 +132,54 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
       loadMoreInfo()
     }, [propertyId, supabase])
 
+    // Create a debounced save function
+    const debouncedSave = useRef(
+      debounce(async () => {
+        try {
+          if (handleSaveRef.current) {
+            await handleSaveRef.current();
+            console.log('Changes saved successfully');
+          }
+        } catch (err) {
+          console.error('Error saving changes:', err);
+          toast.error('Failed to save changes');
+        }
+      }, 1000)
+    ).current;
+
+    // Cleanup debounced function on unmount
+    useEffect(() => {
+      return () => {
+        debouncedSave.cancel();
+      };
+    }, [debouncedSave]);
+
+    // Update state and trigger save
+    const updateMoreInfo = (newState: MoreInfoData | ((prevState: MoreInfoData) => MoreInfoData)) => {
+      if (typeof newState === 'function') {
+        setMoreInfo(prevState => {
+          const updatedState = newState(prevState);
+          debouncedSave();
+          return updatedState;
+        });
+      } else {
+        setMoreInfo(newState);
+        debouncedSave();
+      }
+    };
+
+    // Handle file upload with immediate save
     const handleFileUpload = async (file: File, type: number | 'primary' | 'secondary') => {
       try {
         if (!file) {
           throw new Error('No file selected')
         }
 
-        // Create a clean file path
         const fileName = `${propertyId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
         console.log('Generated file path:', fileName)
 
-        // Get authenticated supabase client
         const supabase = createClientComponentClient()
 
-        // Upload file
         const { data, error: uploadError } = await supabase.storage
           .from('property-documents')
           .upload(fileName, file, {
@@ -153,7 +197,6 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
           throw new Error('Upload succeeded but no path returned')
         }
 
-        // Get public URL
         const { data: urlData } = supabase.storage
           .from('property-documents')
           .getPublicUrl(data.path)
@@ -164,24 +207,20 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
 
         console.log('File uploaded successfully. URL:', urlData.publicUrl)
 
-        // Update state with the new URL
         if (typeof type === 'number') {
-          // Document upload
-          setMoreInfo(prevState => {
+          updateMoreInfo(prevState => {
             const newDocuments = [...prevState.documents]
             newDocuments[type] = {
               ...newDocuments[type],
               url: urlData.publicUrl
             }
-            console.log('Updating documents array:', newDocuments)
             return {
               ...prevState,
-              documents: newDocuments
+              documents: newDocuments.filter(doc => doc.label || doc.url)
             }
           })
         } else {
-          // CTA button upload
-          setMoreInfo(prevState => ({
+          updateMoreInfo(prevState => ({
             ...prevState,
             ctaButtons: {
               ...prevState.ctaButtons,
@@ -239,7 +278,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                     type="text"
                     value={moreInfo.ctaButtons.primary.label}
                     onChange={(e) => {
-                      setMoreInfo(prevState => ({
+                      updateMoreInfo(prevState => ({
                         ...prevState,
                         ctaButtons: {
                           ...prevState.ctaButtons,
@@ -256,7 +295,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                   <select
                     value={moreInfo.ctaButtons.primary.type}
                     onChange={(e) => {
-                      setMoreInfo(prevState => ({
+                      updateMoreInfo(prevState => ({
                         ...prevState,
                         ctaButtons: {
                           ...prevState.ctaButtons,
@@ -303,7 +342,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                         type={moreInfo.ctaButtons.primary.type === 'anchor' ? 'text' : 'url'}
                         value={moreInfo.ctaButtons.primary.url}
                         onChange={(e) => {
-                          setMoreInfo(prevState => ({
+                          updateMoreInfo(prevState => ({
                             ...prevState,
                             ctaButtons: {
                               ...prevState.ctaButtons,
@@ -336,7 +375,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                   <input
                     type="text"
                     value={moreInfo.ctaButtons.secondary.label}
-                    onChange={(e) => setMoreInfo({
+                    onChange={(e) => updateMoreInfo({
                       ...moreInfo,
                       ctaButtons: {
                         ...moreInfo.ctaButtons,
@@ -351,7 +390,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                   <label className="block text-sm font-medium mb-1">Type</label>
                   <select
                     value={moreInfo.ctaButtons.secondary.type}
-                    onChange={(e) => setMoreInfo({
+                    onChange={(e) => updateMoreInfo({
                       ...moreInfo,
                       ctaButtons: {
                         ...moreInfo.ctaButtons,
@@ -396,7 +435,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                       <input
                         type={moreInfo.ctaButtons.secondary.type === 'anchor' ? 'text' : 'url'}
                         value={moreInfo.ctaButtons.secondary.url}
-                        onChange={(e) => setMoreInfo({
+                        onChange={(e) => updateMoreInfo({
                           ...moreInfo,
                           ctaButtons: {
                             ...moreInfo.ctaButtons,
@@ -437,7 +476,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                         onChange={(e) => {
                           const newDocs = [...moreInfo.documents]
                           newDocs[index] = { ...doc, label: e.target.value }
-                          setMoreInfo({ ...moreInfo, documents: newDocs })
+                          updateMoreInfo({ ...moreInfo, documents: newDocs })
                         }}
                         className="w-full p-2 border rounded"
                         placeholder="e.g., Contract of Sale"
@@ -471,7 +510,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
                     onClick={() => {
                       const newDocs = [...moreInfo.documents]
                       newDocs.splice(index, 1)
-                      setMoreInfo({ ...moreInfo, documents: newDocs })
+                      updateMoreInfo({ ...moreInfo, documents: newDocs })
                     }}
                     className="ml-4 p-1 text-gray-400 hover:text-red-500"
                     title="Remove Document"
@@ -486,7 +525,7 @@ const PropertyMoreInfo = forwardRef<{ handleSave: () => Promise<void> }, Propert
             
             <button
               onClick={() => {
-                setMoreInfo({
+                updateMoreInfo({
                   ...moreInfo,
                   documents: [...moreInfo.documents, { label: '', url: '' }]
                 })
