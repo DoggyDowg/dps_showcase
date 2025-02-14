@@ -26,6 +26,16 @@ const nextConfig = {
       '.js': ['.js', '.ts', '.tsx']
     };
 
+    // Handle PDF.js worker
+    config.resolve.alias.canvas = false;
+    
+    if (isServer) {
+      config.module.rules.push({
+        test: /pdf\.js$/,
+        use: 'null-loader'
+      });
+    }
+
     return config;
   },
   // Disable strict mode temporarily while debugging
@@ -41,8 +51,8 @@ const nextConfig = {
       },
     ],
   },
-  // Add transpilePackages for Three.js
-  transpilePackages: ['three']
+  // Add transpilePackages for Three.js and PDF.js
+  transpilePackages: ['three', 'pdfjs-dist']
 }
 
 module.exports = nextConfig 

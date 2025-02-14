@@ -1,12 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocumentProxy } from 'pdfjs-dist';
-
-// Initialize PDF.js
-const pdfjsVersion = '3.11.174'; // Match the version we installed
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.js`;
 
 interface PDFPreviewProps {
   url: string;
@@ -29,6 +23,11 @@ export function PDFPreview({ url, className = '' }: PDFPreviewProps) {
         setLoading(true);
         setError(null);
 
+        // Dynamically import pdfjs-dist
+        const pdfjsLib = await import('pdfjs-dist');
+        const pdfjsVersion = '3.11.174'; // Match the version we installed
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.js`;
+
         // Load the PDF document
         const loadingTask = pdfjsLib.getDocument({
           url,
@@ -36,7 +35,7 @@ export function PDFPreview({ url, className = '' }: PDFPreviewProps) {
           cMapPacked: true,
         });
 
-        const pdf: PDFDocumentProxy = await loadingTask.promise;
+        const pdf = await loadingTask.promise;
 
         // Get the first page
         const page = await pdf.getPage(1);
