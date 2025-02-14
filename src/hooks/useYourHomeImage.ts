@@ -73,7 +73,7 @@ export function useYourHomeImage(propertyId?: string, isDemoProperty?: boolean) 
           .from('assets')
           .select('storage_path')
           .eq('property_id', propertyId)
-          .eq('category', 'yourhome')
+          .eq('category', 'your_home')
           .eq('status', 'active')
           .single()
 

@@ -11,6 +11,7 @@ import { DynamicImage } from './shared/DynamicImage'
 import type { Landmark } from '@/types/maps'
 import type { Property as DBProperty } from '@/types/property'
 import type { Property as MapProperty } from '@/types/maps'
+import { AerialGallery } from './AerialGallery'
 
 interface YourNeighbourhoodProps {
   property: DBProperty
@@ -207,15 +208,25 @@ export function YourNeighbourhood({ property }: YourNeighbourhoodProps) {
           </div>
 
           {/* Map Section */}
-          <div className="h-[600px] rounded-lg overflow-hidden">
-            {isLoaded && mapProperty ? (
-              <GoogleMap property={mapProperty} landmarks={landmarks} center={mapProperty.position} />
-            ) : (
-              <div className="h-full flex items-center justify-center bg-gray-50">
-                <p className="text-gray-500">Loading map...</p>
+          <section className="bg-brand-light py-20">
+            <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+              <div className="h-[600px] rounded-lg overflow-hidden shadow-lg mb-8">
+                {isLoaded && mapProperty && (
+                  <GoogleMap 
+                    property={mapProperty} 
+                    landmarks={landmarks}
+                    center={mapProperty.position}
+                  />
+                )}
               </div>
-            )}
-          </div>
+
+              {/* Aerial Gallery */}
+              <div className="mt-12 text-center">
+                <h4 className="text-2xl font-light mb-6 text-brand-dark text-center">Aerial Views</h4>
+                <AerialGallery property={property} />
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </section>

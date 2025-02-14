@@ -92,7 +92,8 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
     lifestyle_banner: undefined,
     neighbourhood_banner: undefined,
     property_logo: undefined,
-    '3d_tour': []
+    '3d_tour': [],
+    aerials: []
   });
   const [uploadProgress, setUploadProgress] = useState<UploadProgress>({});
   const [error, setError] = useState<string>('');
@@ -124,13 +125,13 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
 
         // Group assets by category
         const grouped = data.reduce((acc: PropertyAssets, asset: Asset) => {
-          if (asset.category === 'gallery' || asset.category === 'neighbourhood' || asset.category === 'floorplan' || asset.category === '3d_tour') {
+          if (asset.category === 'gallery' || asset.category === 'neighbourhood' || asset.category === 'floorplan' || asset.category === '3d_tour' || asset.category === 'aerials') {
             acc[asset.category] = [...(acc[asset.category] || []), asset];
           } else {
             acc[asset.category] = asset;
           }
           return acc;
-        }, { gallery: [], neighbourhood: [], floorplan: [], '3d_tour': [] });
+        }, { gallery: [], neighbourhood: [], floorplan: [], '3d_tour': [], aerials: [] });
 
         setAssets(grouped);
       } catch (err) {
@@ -155,7 +156,7 @@ export default function PropertyAssets({ propertyId, onSave, isDemoProperty }: P
     const config = ASSET_CATEGORY_CONFIG[category];
     
     // Check capacity for both multi-file and single-file categories
-    if (category === 'gallery' || category === 'neighbourhood' || category === 'floorplan') {
+    if (category === 'gallery' || category === 'neighbourhood' || category === 'floorplan' || category === 'aerials') {
       const currentCount = assets[category]?.length || 0;
       if (currentCount >= config.maxFiles) {
         toast.error(`Maximum ${config.maxFiles} files reached for ${config.label}. Please delete at least one file to continue.`);

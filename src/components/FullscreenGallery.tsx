@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import paginationStyles from '@/styles/Pagination.module.css'
 
@@ -11,14 +12,33 @@ interface FullscreenGalleryProps {
 export function FullscreenGallery({ images, initialIndex, onClose }: FullscreenGalleryProps) {
   const [currentSlide, setCurrentSlide] = useState(initialIndex)
   const [transitionClass, setTransitionClass] = useState<'transitionPrev' | 'transitionNext' | ''>('')
+  const [mounted, setMounted] = useState(false)
 
-  // Handle escape key to close
+  // Handle mounting for portal
   useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
+  // Handle escape key to close and manage body scroll
+  useEffect(() => {
+    // Store original overflow style
+    const originalOverflow = document.body.style.overflow
+    
+    // Disable scrolling
+    document.body.style.overflow = 'hidden'
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleEscape)
-    return () => window.removeEventListener('keydown', handleEscape)
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener('keydown', handleEscape)
+      // Restore scrolling
+      document.body.style.overflow = originalOverflow
+    }
   }, [onClose])
 
   const handleSlideTransition = (direction: 'prev' | 'next') => {
@@ -36,8 +56,8 @@ export function FullscreenGallery({ images, initialIndex, onClose }: FullscreenG
     }, 500)
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center">
+  const galleryContent = (
+    <div className="fixed inset-0 flex flex-col items-center justify-center" style={{ zIndex: 99999 }}>
       {/* Blurred background */}
       <div 
         className="absolute inset-0 bg-brand-dark/75 backdrop-blur-xl"
@@ -83,7 +103,7 @@ export function FullscreenGallery({ images, initialIndex, onClose }: FullscreenG
         </div>
 
         {/* Image Counter */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-brand-light bg-brand-dark/50 px-4 py-1 rounded-full text-sm backdrop-blur-sm z-[60]">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-brand-light bg-brand-dark/50 px-4 py-1 rounded-full text-sm backdrop-blur-sm">
           {currentSlide + 1} / {images.length}
         </div>
 
@@ -131,5 +151,14 @@ export function FullscreenGallery({ images, initialIndex, onClose }: FullscreenG
         </div>
       </div>
     </div>
+  )
+
+  // Only render in the browser
+  if (!mounted) return null
+
+  // Render using portal
+  return createPortal(
+    galleryContent,
+    document.body
   )
 } 

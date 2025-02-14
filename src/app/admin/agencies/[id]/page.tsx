@@ -78,8 +78,8 @@ const DEFAULT_MENU_ITEMS = {
 } as const;
 
 export default function AgencyEditPage() {
+  const params = useParams<{ id: string }>()
   const router = useRouter()
-  const params = useParams() as { id: string }
   const supabase = createClientComponentClient()
   
   // State
@@ -91,6 +91,12 @@ export default function AgencyEditPage() {
 
   // Load agency data
   useEffect(() => {
+    if (!params?.id) {
+      setError(new Error('No agency ID provided'));
+      setLoading(false);
+      return;
+    }
+
     async function loadAgency() {
       try {
         if (params.id === 'new') {
@@ -159,7 +165,7 @@ export default function AgencyEditPage() {
     }
 
     loadAgency();
-  }, [params.id, supabase]);
+  }, [params?.id, supabase]);
 
   const handleStoreLogo = async (file: File, variant: 'dark' | 'light') => {
     if (!agency) return;

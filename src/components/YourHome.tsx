@@ -153,10 +153,10 @@ export function YourHome({ property }: YourHomeProps) {
       </section>
 
       {/* Gallery Section */}
-      <section className="relative bg-brand-dark">
+      <section className="relative bg-brand-dark isolate">
         {/* Background Image (Blurred) */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-xl"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-xl -z-10"
           style={{ 
             backgroundImage: `url(${homeImageUrl || '/images/sections/yourhome/yourhome.jpg'})`,
             opacity: 0.5,
@@ -165,10 +165,10 @@ export function YourHome({ property }: YourHomeProps) {
         />
         
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-brand-dark/70" />
+        <div className="absolute inset-0 bg-brand-dark/70 -z-10" />
 
         {/* Content */}
-        <div className="relative z-10 px-12 py-16">
+        <div className="relative px-12 py-16">
           {/* Features Grid */}
           <div ref={featuresRef} className="max-w-7xl mx-auto mb-8">
             <h4 className="text-2xl font-light mb-4 text-brand-light text-center">Home Highlights</h4>

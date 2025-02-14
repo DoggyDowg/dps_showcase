@@ -1,5 +1,5 @@
 export type AssetCategory = 'hero_video' | 'gallery' | 'your_home' | 'neighbourhood' | 'footer' | 'floorplan' | 
-  'features_banner' | 'lifestyle_banner' | 'neighbourhood_banner' | 'property_logo' | '3d_tour';
+  'features_banner' | 'lifestyle_banner' | 'neighbourhood_banner' | 'property_logo' | '3d_tour' | 'aerials';
 export type AssetType = 'image' | 'video' | 'pdf' | 'glb';
 
 export interface Asset {
@@ -50,6 +50,7 @@ export interface PropertyAssets {
   neighbourhood_banner?: Asset;
   property_logo?: Asset;
   '3d_tour': Asset[];
+  aerials: Asset[];
 }
 
 // Configuration for each asset category
@@ -148,5 +149,13 @@ export const ASSET_CATEGORY_CONFIG: Record<AssetCategory, {
     required: false,
     description: 'GLB files for 3D virtual tours (up to 10 files)',
     directory: '3d_tours'
+  },
+  aerials: {
+    label: 'Aerial Images',
+    maxFiles: 10,
+    acceptedTypes: ['image'],
+    required: false,
+    description: 'Aerial photographs of the property and surroundings',
+    directory: 'aerials'
   }
 }; 
