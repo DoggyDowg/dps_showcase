@@ -20,16 +20,17 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (property) {
-      // If on root path and property found, redirect to property page
-      if (request.nextUrl.pathname === '/') {
-        return NextResponse.redirect(new URL(`/properties/${property.id}`, request.url))
-      }
+      // For custom domains, rewrite all paths to the property page
+      // This keeps the URL clean while showing the property content
+      const url = request.nextUrl.clone()
+      url.pathname = `/properties/${property.id}`
+      return NextResponse.rewrite(url)
     }
   } catch (error) {
     console.error('Error in middleware:', error)
   }
 
-  // Continue with the request if no redirect needed
+  // Continue with the request if no rewrite needed
   return NextResponse.next()
 }
 
