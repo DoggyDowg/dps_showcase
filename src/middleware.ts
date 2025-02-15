@@ -6,16 +6,23 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Use a more reliable logging approach
-const log = async (message: string, data: any = {}) => {
-  const logEntry = {
+// Define a type for log data
+interface LogData {
+  timestamp: string;
+  message: string;
+  [key: string]: unknown;
+}
+
+// Use console.log for Edge Runtime
+const log = async (message: string, data: Record<string, unknown> = {}) => {
+  const logEntry: LogData = {
     timestamp: new Date().toISOString(),
     message,
     ...data
   }
   
-  // Log to stdout (captured by Vercel)
-  process.stdout.write(JSON.stringify(logEntry) + '\n')
+  // Use console.log which is supported in Edge Runtime
+  console.log(JSON.stringify(logEntry))
 }
 
 // Log initialization
