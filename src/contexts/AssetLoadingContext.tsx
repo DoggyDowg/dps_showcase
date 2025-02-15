@@ -27,21 +27,36 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
       const timeElapsed = Date.now() - loadingStartTime
       const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - timeElapsed)
 
-      console.log(`[AssetLoading] All assets loaded. Waiting ${remainingTime}ms before hiding loader`)
+      console.log(`[AssetLoading] Loading complete:`, {
+        totalAssets,
+        loadedAssets,
+        timeElapsed,
+        remainingTime,
+        loadingStartTime,
+        currentTime: Date.now()
+      })
 
       // Add a delay to ensure minimum loading time and smooth transition
       const timer = setTimeout(() => {
+        console.log('[AssetLoading] Hiding loader after minimum time')
         setIsLoading(false)
       }, remainingTime)
 
-      return () => clearTimeout(timer)
+      return () => {
+        console.log('[AssetLoading] Cleanup timer')
+        clearTimeout(timer)
+      }
     }
   }, [totalAssets, loadedAssets, loadingStartTime])
 
   const registerAsset = () => {
     setTotalAssets(prev => {
       const newTotal = prev + 1
-      console.log(`[AssetLoading] Registered new asset. Total: ${newTotal}`)
+      console.log(`[AssetLoading] Registered new asset:`, {
+        previousTotal: prev,
+        newTotal,
+        currentLoaded: loadedAssets
+      })
       return newTotal
     })
   }
@@ -49,17 +64,35 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
   const markAssetAsLoaded = () => {
     setLoadedAssets(prev => {
       const newLoaded = prev + 1
-      console.log(`[AssetLoading] Asset loaded. Progress: ${newLoaded}/${totalAssets}`)
+      console.log(`[AssetLoading] Asset loaded:`, {
+        previousLoaded: prev,
+        newLoaded,
+        totalAssets,
+        isComplete: newLoaded === totalAssets
+      })
       return newLoaded
     })
   }
 
   const resetLoading = () => {
-    console.log('[AssetLoading] Reset loading state')
+    console.log('[AssetLoading] Reset loading state:', {
+      previousTotal: totalAssets,
+      previousLoaded: loadedAssets
+    })
     setIsLoading(true)
     setTotalAssets(0)
     setLoadedAssets(0)
   }
+
+  // Log state changes
+  useEffect(() => {
+    console.log('[AssetLoading] State updated:', {
+      isLoading,
+      totalAssets,
+      loadedAssets,
+      progress: totalAssets > 0 ? Math.round((loadedAssets / totalAssets) * 100) : 0
+    })
+  }, [isLoading, totalAssets, loadedAssets])
 
   return (
     <AssetLoadingContext.Provider 

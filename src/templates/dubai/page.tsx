@@ -13,7 +13,6 @@ import { Viewings } from './components/Viewings'
 import { Contact } from './components/Contact'
 import { Footer } from './components/Footer'
 import CustomChat from '@/components/shared/CustomChat'
-import LoadingScreen from '@/components/shared/LoadingScreen'
 import { GridGallery } from './components/ScrollerTransition'
 
 interface DubaiTemplateProps {
@@ -47,7 +46,6 @@ export function DubaiTemplate({ propertyId }: DubaiTemplateProps) {
 
   return (
     <ClientLayout property={property}>
-      {property.is_demo && <LoadingScreen />}
       <main className="min-h-screen">
         {/* Dubai template specific container styles can be added here */}
         <div className="dubai-template overflow-x-hidden">

@@ -1,27 +1,56 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { TrackedImage } from '@/components/shared/AssetTracker'
 import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 
 export default function LoadingScreen() {
   const { isLoading, totalAssets, loadedAssets } = useAssetLoading()
+  const hasLoggedRef = useRef<boolean>(false)
 
   // Calculate loading percentage
   const loadingPercentage = totalAssets === 0 ? 0 : Math.round((loadedAssets / totalAssets) * 100)
 
-  // Ensure loading screen shows for at least 2 seconds
+  // Log when loading screen mounts and unmounts
   useEffect(() => {
-    if (totalAssets === 0) {
-      // Register the logo as an asset
-      const timer = setTimeout(() => {
-        // This will trigger initial asset registration
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [totalAssets])
+    console.log('[LoadingScreen] Mounted:', {
+      isLoading,
+      totalAssets,
+      loadedAssets,
+      loadingPercentage
+    })
 
-  if (!isLoading) return null
+    return () => {
+      console.log('[LoadingScreen] Unmounted')
+    }
+  }, [isLoading, totalAssets, loadedAssets, loadingPercentage])
+
+  // Log when loading state changes
+  useEffect(() => {
+    console.log('[LoadingScreen] Loading state changed:', {
+      isLoading,
+      totalAssets,
+      loadedAssets,
+      loadingPercentage
+    })
+  }, [isLoading])
+
+  // Log when assets change
+  useEffect(() => {
+    if (totalAssets > 0 && !hasLoggedRef.current) {
+      console.log('[LoadingScreen] Initial assets registered:', {
+        totalAssets,
+        loadedAssets,
+        loadingPercentage
+      })
+      hasLoggedRef.current = true
+    }
+  }, [totalAssets, loadedAssets, loadingPercentage])
+
+  if (!isLoading) {
+    console.log('[LoadingScreen] Not loading, returning null')
+    return null
+  }
 
   return (
     <div className="fixed inset-0 bg-white flex flex-col items-center justify-center gap-6 z-[9999]">
@@ -47,7 +76,7 @@ export default function LoadingScreen() {
           />
         </div>
         <div className="text-sm text-gray-600">
-          {loadingPercentage}%
+          {loadingPercentage}% ({loadedAssets}/{totalAssets} assets)
         </div>
       </div>
     </div>
