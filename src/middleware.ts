@@ -53,6 +53,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Log Supabase configuration
+  console.log('🔧 Supabase configuration:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseKey,
+    urlPrefix: supabaseUrl?.substring(0, 10),
+    keyPrefix: supabaseKey?.substring(0, 10),
+    timestamp: new Date().toISOString()
+  })
+
   try {
     console.log('🔍 Querying Supabase for domain:', hostname)
     
@@ -77,9 +86,19 @@ export async function middleware(request: NextRequest) {
         message: error.message,
         details: error.details,
         hint: error.hint,
-        code: error.code
+        code: error.code,
+        status
       })
-      return NextResponse.next()
+
+      // If it's a "not found" error, continue normally
+      if (error.code === 'PGRST116') {
+        console.log('⚠️ No property found for domain, continuing')
+        return NextResponse.next()
+      }
+
+      // For other errors, return a 500 error
+      console.error('🔴 Critical Supabase error:', error)
+      return new NextResponse('Internal Server Error', { status: 500 })
     }
 
     if (property) {
@@ -106,6 +125,8 @@ export async function middleware(request: NextRequest) {
       } : error,
       timestamp: new Date().toISOString()
     })
+    // Return a 500 error for unhandled exceptions
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 
   console.log('➡️ Continuing with original request:', pathname)
