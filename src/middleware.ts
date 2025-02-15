@@ -6,16 +6,29 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-console.log('🔧 Middleware initialization:', {
+// Use a more reliable logging approach
+const log = async (message: string, data: any = {}) => {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    message,
+    ...data
+  }
+  
+  // Log to stdout (captured by Vercel)
+  process.stdout.write(JSON.stringify(logEntry) + '\n')
+}
+
+// Log initialization
+log('Middleware initialization', {
   hasSupabaseUrl: !!supabaseUrl,
-  hasSupabaseKey: !!supabaseKey,
-  timestamp: new Date().toISOString()
+  hasSupabaseKey: !!supabaseKey
 })
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('🔴 Missing Supabase environment variables:', {
+  log('Missing Supabase environment variables', {
     hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseKey
+    hasKey: !!supabaseKey,
+    severity: 'error'
   })
 }
 
@@ -34,12 +47,11 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const url = request.url
 
-  console.log('🚀 Middleware called:', { 
+  await log('Middleware called', { 
     hostname, 
     pathname, 
     url,
-    headers: Object.fromEntries(request.headers.entries()),
-    time: new Date().toISOString()
+    headers: Object.fromEntries(request.headers.entries())
   })
 
   // Skip middleware for Next.js internals and static files
@@ -49,21 +61,12 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/static') ||
     pathname.startsWith('/api')
   ) {
-    console.log('⏭️ Skipping internal path:', pathname)
+    await log('Skipping internal path', { pathname })
     return NextResponse.next()
   }
 
-  // Log Supabase configuration
-  console.log('🔧 Supabase configuration:', {
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseKey,
-    urlPrefix: supabaseUrl?.substring(0, 10),
-    keyPrefix: supabaseKey?.substring(0, 10),
-    timestamp: new Date().toISOString()
-  })
-
   try {
-    console.log('🔍 Querying Supabase for domain:', hostname)
+    await log('Querying Supabase for domain', { hostname })
     
     // Query Supabase for property with matching custom domain
     const { data: property, error, status } = await supabase
@@ -72,64 +75,62 @@ export async function middleware(request: NextRequest) {
       .eq('custom_domain', hostname)
       .single()
 
-    console.log('📊 Supabase response:', {
+    await log('Supabase response', {
       status,
       hasData: !!property,
       hasError: !!error,
       error: error?.message,
-      property,
-      timestamp: new Date().toISOString()
+      property
     })
 
     if (error) {
-      console.error('❌ Supabase query error:', {
+      await log('Supabase query error', {
         message: error.message,
         details: error.details,
         hint: error.hint,
         code: error.code,
-        status
+        status,
+        severity: 'error'
       })
 
       // If it's a "not found" error, continue normally
       if (error.code === 'PGRST116') {
-        console.log('⚠️ No property found for domain, continuing')
+        await log('No property found for domain', { hostname })
         return NextResponse.next()
       }
 
       // For other errors, return a 500 error
-      console.error('🔴 Critical Supabase error:', error)
+      await log('Critical Supabase error', { error, severity: 'error' })
       return new NextResponse('Internal Server Error', { status: 500 })
     }
 
     if (property) {
-      console.log('✅ Found property:', property)
+      await log('Found property', { property })
       
       const url = request.nextUrl.clone()
       url.pathname = `/properties/${property.id}`
       
-      console.log('↪️ Rewriting to:', {
+      await log('Rewriting to', {
         from: pathname,
-        to: url.pathname,
-        timestamp: new Date().toISOString()
+        to: url.pathname
       })
       
       return NextResponse.rewrite(url)
     } else {
-      console.log('❌ No property found for domain:', hostname)
+      await log('No property found for domain', { hostname })
     }
   } catch (error) {
-    console.error('💥 Middleware error:', {
+    await log('Middleware error', {
       error: error instanceof Error ? {
         message: error.message,
         stack: error.stack
       } : error,
-      timestamp: new Date().toISOString()
+      severity: 'error'
     })
-    // Return a 500 error for unhandled exceptions
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 
-  console.log('➡️ Continuing with original request:', pathname)
+  await log('Continuing with original request', { pathname })
   return NextResponse.next()
 }
 
