@@ -10,6 +10,18 @@ const supabase = createClient(
 
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host')
+  const pathname = request.nextUrl.pathname
+
+  // Skip middleware for specific paths
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('favicon') ||
+    pathname.startsWith('/public')
+  ) {
+    return NextResponse.next()
+  }
 
   try {
     // Query Supabase for property with matching custom domain
@@ -20,11 +32,12 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (property) {
-      // For custom domains, rewrite all paths to the property page
-      // This keeps the URL clean while showing the property content
-      const url = request.nextUrl.clone()
-      url.pathname = `/properties/${property.id}`
-      return NextResponse.rewrite(url)
+      // Only rewrite the root path and non-system paths
+      if (pathname === '/' || !pathname.startsWith('/_')) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/properties/${property.id}`
+        return NextResponse.rewrite(url)
+      }
     }
   } catch (error) {
     console.error('Error in middleware:', error)
@@ -36,14 +49,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    // Match all paths except static files and api routes
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 } 
