@@ -12,6 +12,12 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host')
   const pathname = request.nextUrl.pathname
 
+  console.log('Middleware called:', {
+    hostname,
+    pathname,
+    url: request.url
+  })
+
   // Skip middleware for specific paths
   if (
     pathname.startsWith('/_next') ||
@@ -20,36 +26,48 @@ export async function middleware(request: NextRequest) {
     pathname.includes('favicon') ||
     pathname.startsWith('/public')
   ) {
+    console.log('Skipping middleware for system path:', pathname)
     return NextResponse.next()
   }
 
   try {
+    console.log('Querying Supabase for domain:', hostname)
     // Query Supabase for property with matching custom domain
-    const { data: property } = await supabase
+    const { data: property, error } = await supabase
       .from('properties')
       .select('id')
       .eq('custom_domain', hostname)
       .single()
 
+    if (error) {
+      console.error('Supabase query error:', error)
+    }
+
     if (property) {
+      console.log('Found property:', property)
       // Only rewrite the root path and non-system paths
       if (pathname === '/' || !pathname.startsWith('/_')) {
         const url = request.nextUrl.clone()
         url.pathname = `/properties/${property.id}`
+        console.log('Rewriting to:', url.pathname)
         return NextResponse.rewrite(url)
       }
+    } else {
+      console.log('No property found for domain:', hostname)
     }
   } catch (error) {
     console.error('Error in middleware:', error)
   }
 
+  console.log('Continuing with original request:', pathname)
   // Continue with the request if no rewrite needed
   return NextResponse.next()
 }
 
+// Update matcher to be more permissive
 export const config = {
   matcher: [
-    // Match all paths except static files and api routes
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    // Match all paths
+    '/:path*',
   ],
 } 
