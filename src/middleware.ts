@@ -6,6 +6,12 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+console.log('🔧 Middleware initialization:', {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasSupabaseKey: !!supabaseKey,
+  timestamp: new Date().toISOString()
+})
+
 if (!supabaseUrl || !supabaseKey) {
   console.error('🔴 Missing Supabase environment variables:', {
     hasUrl: !!supabaseUrl,
@@ -15,7 +21,12 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(
   supabaseUrl || '',
-  supabaseKey || ''
+  supabaseKey || '',
+  {
+    auth: {
+      persistSession: false
+    }
+  }
 )
 
 export async function middleware(request: NextRequest) {
@@ -23,17 +34,21 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const url = request.url
 
-  console.log('🚨 MIDDLEWARE START:', { 
+  console.log('🚀 Middleware called:', { 
     hostname, 
     pathname, 
     url,
-    time: new Date().toISOString(),
-    hasSupabaseUrl: !!supabaseUrl,
-    hasSupabaseKey: !!supabaseKey
+    headers: Object.fromEntries(request.headers.entries()),
+    time: new Date().toISOString()
   })
 
-  // Skip middleware for Next.js internals
-  if (pathname.startsWith('/_next') || pathname.includes('favicon')) {
+  // Skip middleware for Next.js internals and static files
+  if (
+    pathname.startsWith('/_next') || 
+    pathname.includes('favicon') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/api')
+  ) {
     console.log('⏭️ Skipping internal path:', pathname)
     return NextResponse.next()
   }
@@ -42,21 +57,29 @@ export async function middleware(request: NextRequest) {
     console.log('🔍 Querying Supabase for domain:', hostname)
     
     // Query Supabase for property with matching custom domain
-    const { data: property, error } = await supabase
+    const { data: property, error, status } = await supabase
       .from('properties')
       .select('id, name, custom_domain')
       .eq('custom_domain', hostname)
       .single()
 
     console.log('📊 Supabase response:', {
+      status,
       hasData: !!property,
       hasError: !!error,
       error: error?.message,
-      property
+      property,
+      timestamp: new Date().toISOString()
     })
 
     if (error) {
-      throw error
+      console.error('❌ Supabase query error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
+      return NextResponse.next()
     }
 
     if (property) {
@@ -64,13 +87,25 @@ export async function middleware(request: NextRequest) {
       
       const url = request.nextUrl.clone()
       url.pathname = `/properties/${property.id}`
-      console.log('↪️ Rewriting to:', url.pathname)
+      
+      console.log('↪️ Rewriting to:', {
+        from: pathname,
+        to: url.pathname,
+        timestamp: new Date().toISOString()
+      })
+      
       return NextResponse.rewrite(url)
     } else {
       console.log('❌ No property found for domain:', hostname)
     }
   } catch (error) {
-    console.error('💥 Middleware error:', error instanceof Error ? error.message : error)
+    console.error('💥 Middleware error:', {
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack
+      } : error,
+      timestamp: new Date().toISOString()
+    })
   }
 
   console.log('➡️ Continuing with original request:', pathname)
@@ -79,7 +114,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all paths except Next.js internals
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all paths except:
+     * 1. /api routes
+     * 2. /_next (Next.js internals)
+     * 3. /static (static files)
+     * 4. all files in /public
+     */
+    '/((?!api|_next|static|[\\w-]+\\.\\w+).*)',
   ],
 } 
