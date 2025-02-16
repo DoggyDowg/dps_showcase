@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { HeaderLink } from './shared/HeaderLink'
 import { MobileMenu } from './shared/MobileMenu'
 import { usePropertyLogo } from '@/hooks/usePropertyLogo'
+import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 import styles from '@/styles/Header.module.css'
 import type { Property } from '@/types/property'
 
@@ -23,15 +24,21 @@ declare global {
 }
 
 export function Header({ property }: HeaderProps) {
-  const [mounted, setMounted] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [logoLoaded, setLogoLoaded] = useState(false)
   const { logoUrl } = usePropertyLogo(property.id)
+  const { registerAsset, markAssetAsLoaded } = useAssetLoading()
   const isCustomDomain = typeof window !== 'undefined' ? window.__CUSTOM_DOMAIN__ : false
 
+  // Register logo as an asset to load
   useEffect(() => {
-    setMounted(true)
+    if (logoUrl) {
+      registerAsset()
+    }
+  }, [logoUrl, registerAsset])
 
+  useEffect(() => {
     const handleScroll = () => {
       requestAnimationFrame(() => {
         const shouldShow = window.scrollY > 100
@@ -39,15 +46,14 @@ export function Header({ property }: HeaderProps) {
       })
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Check initial scroll position
+    if (logoLoaded) {
+      window.addEventListener('scroll', handleScroll, { passive: true })
+      // Check initial scroll position after logo is loaded
+      handleScroll()
+    }
 
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-  
-  if (!mounted) {
-    return null
-  }
+  }, [logoLoaded])
   
   return (
     <header className={`${styles.header} ${isVisible ? styles.visible : ''} relative z-[100]`}>
@@ -75,6 +81,10 @@ export function Header({ property }: HeaderProps) {
                   height={LOGO_HEIGHT}
                   priority
                   className="object-contain w-auto h-[44px]"
+                  onLoad={() => {
+                    setLogoLoaded(true)
+                    markAssetAsLoaded()
+                  }}
                 />
               ) : (
                 <div 

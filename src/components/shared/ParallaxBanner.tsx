@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 
 interface ParallaxBannerProps {
   imageSrc: string
@@ -10,61 +11,76 @@ interface ParallaxBannerProps {
 }
 
 export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBannerProps) {
-  const [offset, setOffset] = useState(0)
   const bannerRef = useRef<HTMLDivElement>(null)
-  const ticking = useRef(false)
+  const imageRef = useRef<HTMLDivElement>(null)
+  const [isImageLoaded, setIsImageLoaded] = useState(false)
+  const { registerAsset, markAssetAsLoaded } = useAssetLoading()
+
+  // Register this banner's image as an asset to load
+  useEffect(() => {
+    if (!loading && imageSrc) {
+      registerAsset()
+    }
+  }, [loading, imageSrc, registerAsset])
 
   useEffect(() => {
+    const banner = bannerRef.current
+    const image = imageRef.current
+    if (!banner || !image || !isImageLoaded) return
+
     const handleScroll = () => {
-      if (!ticking.current) {
-        requestAnimationFrame(() => {
-          if (bannerRef.current) {
-            const scrolled = window.scrollY
-            const rate = scrolled * 0.5
-            const newOffset = Math.min(rate, 500) // Limit the parallax effect
-            setOffset(newOffset)
-          }
-          ticking.current = false
-        })
-        ticking.current = true
+      const rect = banner.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      
+      // Only apply parallax when banner is in extended viewport
+      if (rect.top < viewportHeight + 200 && rect.bottom > -200) {
+        const distanceFromCenter = rect.top - (viewportHeight / 2)
+        const parallaxOffset = Math.min(Math.max(distanceFromCenter * 0.2, -150), 150)
+        image.style.transform = `translateY(${parallaxOffset}px)`
       }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial check
+    handleScroll() // Initial position
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isImageLoaded])
+
+  // Reset image loaded state when image source changes
+  useEffect(() => {
+    setIsImageLoaded(false)
+  }, [imageSrc])
 
   return (
-    <div 
-      ref={bannerRef}
-      className="relative h-[50vh] min-h-[400px] max-h-[600px] w-full overflow-hidden bg-brand-dark"
-    >
+    <div ref={bannerRef} className="relative h-[160px] w-full overflow-hidden bg-brand-dark">
       {loading ? (
         <div className="absolute inset-0 bg-gray-200 animate-pulse" />
       ) : (
-        <div 
-          className="absolute inset-0 transform"
-          style={{ 
-            transform: `translateY(${offset}px)`,
-            willChange: 'transform'
-          }}
-        >
-          <Image
-            src={imageSrc}
-            alt={title}
-            fill
-            priority
-            className="object-cover scale-[1.5]"
-          />
+        <div className="absolute inset-0">
+          {/* Image container */}
+          <div 
+            ref={imageRef} 
+            className="absolute -top-[150px] left-0 right-0 h-[460px] overflow-hidden"
+          >
+            <Image
+              src={imageSrc}
+              alt={title}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+              onLoad={() => {
+                setIsImageLoaded(true)
+                markAssetAsLoaded()
+              }}
+            />
+          </div>
+          {/* Overlay */}
           <div className="absolute inset-0 bg-brand-dark/50" />
         </div>
       )}
-
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Content */}
+      <div className="relative h-full max-w-7xl mx-auto px-4 flex items-center justify-center">
         <h2 className="text-4xl sm:text-5xl md:text-6xl font-light text-brand-light tracking-wider">
           {title}
         </h2>
