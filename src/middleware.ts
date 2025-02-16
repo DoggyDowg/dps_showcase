@@ -63,27 +63,33 @@ export async function middleware(request: NextRequest) {
         timestamp: new Date().toISOString()
       }))
 
-      // Simple exact match query
-      const { data: property, error } = await supabase
+      // First try to find the property regardless of status
+      const { data: property, error: propertyError } = await supabase
         .from('properties')
         .select('id, custom_domain, status')
         .eq('custom_domain', hostname)
-        .eq('status', 'published')
         .single()
 
       console.log(JSON.stringify({
-        message: '🔍 DEBUG: Exact match query result',
-        query: {
-          custom_domain: hostname,
-          status: 'published'
-        },
+        message: '🔍 DEBUG: Domain lookup result',
+        query: { custom_domain: hostname },
         result: property,
-        error,
+        error: propertyError,
         timestamp: new Date().toISOString()
       }))
 
-      // If no match with www, try without
-      if (error && hostname.startsWith('www.')) {
+      // If property exists but isn't published, return specific error
+      if (property && property.status !== 'published') {
+        console.log(JSON.stringify({
+          message: '⚠️ Property found but not published',
+          property,
+          timestamp: new Date().toISOString()
+        }))
+        return NextResponse.next()
+      }
+
+      // If no exact match, try without www
+      if (propertyError && hostname.startsWith('www.')) {
         const nonWwwHostname = hostname.replace('www.', '')
         console.log(JSON.stringify({
           message: '🔄 DEBUG: Trying without www',
@@ -123,19 +129,20 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      if (error || !property) {
+      if (propertyError || !property) {
         console.log(JSON.stringify({
           message: '❌ No property found for domain',
           hostname,
-          error: error?.message,
-          details: error?.details,
+          error: propertyError?.message,
+          details: propertyError?.details,
           timestamp: new Date().toISOString()
         }))
         return NextResponse.next()
       }
 
+      // If we get here, we found a published property
       console.log(JSON.stringify({
-        message: '✅ Found property for domain',
+        message: '✅ Found published property for domain',
         hostname,
         property
       }))
