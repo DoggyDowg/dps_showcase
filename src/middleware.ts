@@ -68,35 +68,58 @@ export async function middleware(request: NextRequest) {
       }, null, 2))
 
       // Try both with and without www prefix
-      const possibleDomains = [hostname]
-      if (hostname?.startsWith('www.')) {
-        possibleDomains.push(hostname.replace('www.', ''))
+      const possibleDomains = [hostname?.toLowerCase()]
+      if (hostname?.toLowerCase().startsWith('www.')) {
+        possibleDomains.push(hostname.toLowerCase().replace('www.', ''))
       } else if (hostname) {
-        possibleDomains.push(`www.${hostname}`)
+        possibleDomains.push(`www.${hostname.toLowerCase()}`)
       }
+
+      // Remove any null values
+      const validDomains = possibleDomains.filter(Boolean)
 
       console.log(JSON.stringify({
         message: '🔍 Trying possible domain variations',
-        possibleDomains,
+        possibleDomains: validDomains,
         timestamp: new Date().toISOString()
       }, null, 2))
 
+      // First, let's check what domains exist in the database
+      const { data: allDomains, error: domainsError } = await supabase
+        .from('properties')
+        .select('custom_domain')
+        .not('custom_domain', 'is', null)
+
+      console.log(JSON.stringify({
+        message: '📋 All domains in database',
+        domains: allDomains?.map(d => d.custom_domain),
+        error: domainsError ? {
+          message: domainsError.message,
+          code: domainsError.code
+        } : null,
+        timestamp: new Date().toISOString()
+      }, null, 2))
+
+      // Now try to find our specific domain
       const { data: property, error } = await supabase
         .from('properties')
         .select('id, status, custom_domain')
-        .in('custom_domain', possibleDomains)
+        .or(validDomains.map(domain => `custom_domain.ilike.${domain}`).join(','))
         .eq('status', 'published')
         .single()
 
       console.log(JSON.stringify({
         message: '📊 SUPABASE QUERY RESULT',
         property,
+        query: {
+          domains: validDomains,
+          status: 'published'
+        },
         error: error ? {
           message: error.message,
           code: error.code,
           details: error.details
         } : null,
-        possibleDomains,
         timestamp: new Date().toISOString()
       }, null, 2))
 
