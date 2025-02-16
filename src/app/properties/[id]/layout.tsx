@@ -14,12 +14,12 @@ export async function generateMetadata() {
   }
 }
 
-export default function PropertyLayout({
+export default async function PropertyLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headersList = headers()
+  const headersList = await headers()
   const isCustomDomain = headersList.get('x-custom-domain') === 'true'
 
   return (
