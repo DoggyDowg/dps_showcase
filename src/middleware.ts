@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next()
       }
 
-      // Rewrite to the property page
+      // Rewrite to the property page while keeping the URL clean
       const newUrl = request.nextUrl.clone()
       newUrl.pathname = `/properties/${property.id}`
       
@@ -84,21 +84,9 @@ export async function middleware(request: NextRequest) {
         fullTo: `${newUrl.origin}${newUrl.pathname}${newUrl.search}`
       }))
       
-      // Use redirect instead of rewrite to ensure client-side code works correctly
-      if (pathname === '/') {
-        const response = NextResponse.redirect(new URL(newUrl.pathname, request.url))
-        
-        // Add debug headers
-        response.headers.set('x-debug-redirect-from', pathname)
-        response.headers.set('x-debug-redirect-to', newUrl.pathname)
-        response.headers.set('x-debug-hostname', hostname)
-        
-        return response
-      }
-      
       const response = NextResponse.rewrite(newUrl)
       
-      // Add special header to indicate this is a custom domain
+      // Add custom domain detection header
       response.headers.set('x-custom-domain', 'true')
       
       // Add debug headers

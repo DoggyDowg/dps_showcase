@@ -9,13 +9,6 @@ import { usePropertyLogo } from '@/hooks/usePropertyLogo'
 import styles from '@/styles/Header.module.css'
 import type { Property } from '@/types/property'
 
-// Add type declaration at the top of the file
-declare global {
-  interface Window {
-    __CUSTOM_DOMAIN__?: boolean;
-  }
-}
-
 const LOGO_HEIGHT = 44
 const MAX_LOGO_WIDTH = 200
 
@@ -23,48 +16,34 @@ interface HeaderProps {
   property: Property
 }
 
+declare global {
+  interface Window {
+    __CUSTOM_DOMAIN__?: boolean;
+  }
+}
+
 export function Header({ property }: HeaderProps) {
   const [mounted, setMounted] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { logoUrl } = usePropertyLogo(property.id)
+  const isCustomDomain = typeof window !== 'undefined' ? window.__CUSTOM_DOMAIN__ : false
 
   useEffect(() => {
     setMounted(true)
 
     const handleScroll = () => {
-      // Show header after scrolling 100px
-      const shouldShow = window.scrollY > 100
-      if (shouldShow !== isVisible) {
-        console.log('Header visibility changing:', {
-          scrollY: window.scrollY,
-          shouldShow,
-          wasVisible: isVisible,
-          isCustomDomain: window.__CUSTOM_DOMAIN__
-        })
+      requestAnimationFrame(() => {
+        const shouldShow = window.scrollY > 100
         setIsVisible(shouldShow)
-      }
+      })
     }
 
-    // Force recalculation of scroll position on custom domains
-    if (window.__CUSTOM_DOMAIN__) {
-      console.log('Custom domain detected, forcing scroll recalculation')
-      setTimeout(handleScroll, 0)
-    }
-
-    // Add passive flag for better scroll performance
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll() // Check initial scroll position
 
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [isVisible])
-  
-  // Force header visibility on custom domains if scrolled
-  useEffect(() => {
-    if (mounted && window.scrollY > 100) {
-      setIsVisible(true)
-    }
-  }, [mounted])
+  }, [])
   
   if (!mounted) {
     return null
@@ -83,7 +62,11 @@ export function Header({ property }: HeaderProps) {
 
           {/* Centered Logo */}
           <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
-            <Link href="/" prefetch={false} className="block">
+            <Link 
+              href={isCustomDomain ? "/" : `/properties/${property.id}`} 
+              prefetch={false} 
+              className="block"
+            >
               {logoUrl ? (
                 <Image
                   src={logoUrl}

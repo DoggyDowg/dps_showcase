@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader as GLTFLoaderImpl } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RGBELoader as RGBELoaderImpl } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
 interface VirtualTourProps {
   modelPath: string;
@@ -16,7 +16,7 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -52,7 +52,7 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     rendererRef.current = renderer;
 
     // Controls setup
-    const controls = new OrbitControlsImpl(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
@@ -62,7 +62,7 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     controlsRef.current = controls;
 
     // Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);  // Brighter ambient
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);  // Brighter key light
@@ -75,9 +75,9 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     scene.add(fillLight);
 
     // Environment map
-    new RGBELoaderImpl()
+    new RGBELoader()
       .setPath('/envmaps/')
-      .load('royal_esplanade_1k.hdr', (texture) => {
+      .load('royal_esplanade_1k.hdr', (texture: THREE.Texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
         scene.background = new THREE.Color(0xffffff);  // Use white background instead
@@ -94,10 +94,10 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     scene.add(fillLight);
 
     // Load model
-    const loader = new GLTFLoaderImpl();
+    const loader = new GLTFLoader();
     loader.load(
       modelPath,
-      (gltf) => {
+      (gltf: GLTF) => {
         // Center model
         const box = new THREE.Box3().setFromObject(gltf.scene);
         const center = box.getCenter(new THREE.Vector3());
@@ -120,11 +120,11 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
         controls.target.set(0, 0, 0);
         controls.update();
       },
-      (progress) => {
+      (progress: { loaded: number; total: number }) => {
         const percent = (progress.loaded / progress.total) * 100;
         console.log('Loading progress:', percent, '%');
       },
-      (error) => {
+      (error: unknown) => {
         console.error('Error loading model:', error instanceof Error ? error.message : 'Unknown error');
       }
     );
