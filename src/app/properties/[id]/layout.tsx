@@ -2,8 +2,7 @@ import Script from 'next/script'
 import { headers } from 'next/headers'
 
 export default async function PropertyLayout({
-  children,
-  params,
+  children
 }: {
   children: React.ReactNode
   params: { id: string }

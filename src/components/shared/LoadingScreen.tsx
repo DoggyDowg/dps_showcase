@@ -33,7 +33,7 @@ export default function LoadingScreen() {
       loadedAssets,
       loadingPercentage
     })
-  }, [isLoading])
+  }, [isLoading, totalAssets, loadedAssets, loadingPercentage])
 
   // Log when assets change
   useEffect(() => {

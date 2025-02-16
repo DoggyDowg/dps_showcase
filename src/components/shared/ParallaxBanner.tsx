@@ -19,7 +19,6 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
       if (!ticking.current) {
         requestAnimationFrame(() => {
           if (bannerRef.current) {
-            const rect = bannerRef.current.getBoundingClientRect()
             const scrolled = window.scrollY
             const rate = scrolled * 0.5
             const newOffset = Math.min(rate, 500) // Limit the parallax effect
