@@ -50,29 +50,71 @@ export async function middleware(request: NextRequest) {
     try {
       const supabase = createRouteHandlerClient({ cookies })
 
+      // First, let's debug what's in the database
+      const { data: allProperties, error: listError } = await supabase
+        .from('properties')
+        .select('id, custom_domain, status')
+        .not('custom_domain', 'is', null)
+
+      console.log(JSON.stringify({
+        message: '📋 DEBUG: All properties with custom domains',
+        properties: allProperties,
+        error: listError,
+        timestamp: new Date().toISOString()
+      }))
+
       // Simple exact match query
       const { data: property, error } = await supabase
         .from('properties')
-        .select('id')
+        .select('id, custom_domain, status')
         .eq('custom_domain', hostname)
         .eq('status', 'published')
         .single()
 
+      console.log(JSON.stringify({
+        message: '🔍 DEBUG: Exact match query result',
+        query: {
+          custom_domain: hostname,
+          status: 'published'
+        },
+        result: property,
+        error,
+        timestamp: new Date().toISOString()
+      }))
+
       // If no match with www, try without
       if (error && hostname.startsWith('www.')) {
         const nonWwwHostname = hostname.replace('www.', '')
+        console.log(JSON.stringify({
+          message: '🔄 DEBUG: Trying without www',
+          originalHostname: hostname,
+          nonWwwHostname,
+          timestamp: new Date().toISOString()
+        }))
+
         const { data: nonWwwProperty, error: nonWwwError } = await supabase
           .from('properties')
-          .select('id')
+          .select('id, custom_domain, status')
           .eq('custom_domain', nonWwwHostname)
           .eq('status', 'published')
           .single()
+
+        console.log(JSON.stringify({
+          message: '🔍 DEBUG: Non-www query result',
+          query: {
+            custom_domain: nonWwwHostname,
+            status: 'published'
+          },
+          result: nonWwwProperty,
+          error: nonWwwError,
+          timestamp: new Date().toISOString()
+        }))
 
         if (!nonWwwError && nonWwwProperty) {
           console.log(JSON.stringify({
             message: '✅ Found property with non-www domain',
             hostname: nonWwwHostname,
-            propertyId: nonWwwProperty.id
+            property: nonWwwProperty
           }))
           const newUrl = request.nextUrl.clone()
           newUrl.pathname = `/properties/${nonWwwProperty.id}`
@@ -85,7 +127,9 @@ export async function middleware(request: NextRequest) {
         console.log(JSON.stringify({
           message: '❌ No property found for domain',
           hostname,
-          error: error?.message
+          error: error?.message,
+          details: error?.details,
+          timestamp: new Date().toISOString()
         }))
         return NextResponse.next()
       }
@@ -93,7 +137,7 @@ export async function middleware(request: NextRequest) {
       console.log(JSON.stringify({
         message: '✅ Found property for domain',
         hostname,
-        propertyId: property.id
+        property
       }))
 
       const newUrl = request.nextUrl.clone()
