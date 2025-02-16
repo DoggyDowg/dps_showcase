@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
     pathname,
     fullUrl,
     headers: Object.fromEntries(request.headers.entries())
-  }))
+  }, null, 2))
 
   // Skip middleware for Next.js internals and static files
   if (
@@ -46,23 +46,47 @@ export async function middleware(request: NextRequest) {
   // Handle custom domains
   if (hostname && !hostname.includes('localhost') && !hostname.includes('vercel.app')) {
     try {
+      console.log(JSON.stringify({
+        message: '🏠 PROCESSING CUSTOM DOMAIN',
+        hostname,
+        pathname,
+        timestamp: new Date().toISOString()
+      }, null, 2))
+
       // Create Supabase client
       const supabase = createRouteHandlerClient({ cookies })
       
       // Query the properties table to find the property with this custom domain
+      console.log(JSON.stringify({
+        message: '🔍 QUERYING SUPABASE',
+        query: {
+          table: 'properties',
+          custom_domain: hostname,
+          status: 'published'
+        }
+      }, null, 2))
+
       const { data: property, error } = await supabase
         .from('properties')
-        .select('id, status')
-        .eq('custom_domain', hostname)
+        .select('id, status, custom_domain')
+        .or(`custom_domain.eq.${hostname},custom_domain.eq.www.${hostname}`)
         .eq('status', 'published')
         .single()
+
+      console.log(JSON.stringify({
+        message: '📊 SUPABASE QUERY RESULT',
+        property,
+        error,
+        timestamp: new Date().toISOString()
+      }, null, 2))
 
       if (error || !property) {
         console.log(JSON.stringify({
           message: '❌ NO PROPERTY FOUND FOR DOMAIN',
           hostname,
-          error: error?.message
-        }))
+          error: error?.message,
+          timestamp: new Date().toISOString()
+        }, null, 2))
         return NextResponse.next()
       }
 
@@ -81,8 +105,9 @@ export async function middleware(request: NextRequest) {
         to: newUrl.pathname,
         hostname,
         fullFrom: fullUrl,
-        fullTo: `${newUrl.origin}${newUrl.pathname}${newUrl.search}`
-      }))
+        fullTo: `${newUrl.origin}${newUrl.pathname}${newUrl.search}`,
+        timestamp: new Date().toISOString()
+      }, null, 2))
       
       const response = NextResponse.rewrite(newUrl)
       
@@ -106,8 +131,9 @@ export async function middleware(request: NextRequest) {
 
       console.log(JSON.stringify({
         message: '🔐 PRESERVED SUPABASE HEADERS',
-        preservedHeaders
-      }))
+        preservedHeaders,
+        timestamp: new Date().toISOString()
+      }, null, 2))
       
       // Add debug headers
       response.headers.set('x-debug-rewrite-from', pathname)
@@ -116,7 +142,11 @@ export async function middleware(request: NextRequest) {
       
       return response
     } catch (err) {
-      console.error('Middleware error:', err)
+      console.error('Middleware error:', JSON.stringify({
+        error: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        timestamp: new Date().toISOString()
+      }, null, 2))
       return NextResponse.next()
     }
   }
