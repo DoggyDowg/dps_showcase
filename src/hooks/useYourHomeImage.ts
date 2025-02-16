@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000 // 1 second
+
 export function useYourHomeImage(propertyId?: string, isDemoProperty?: boolean) {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -11,7 +14,8 @@ export function useYourHomeImage(propertyId?: string, isDemoProperty?: boolean) 
 
   useEffect(() => {
     let isMounted = true
-    const abortController = new AbortController()
+    let retryCount = 0
+    const controller = new AbortController()
 
     async function loadImage() {
       if (!propertyId) {
@@ -24,51 +28,47 @@ export function useYourHomeImage(propertyId?: string, isDemoProperty?: boolean) 
         setLoading(true)
         setError(null)
 
-        // If it's a demo property, use the demo image
+        // If it's a demo property, use the demo banner
         if (isDemoProperty) {
-          console.log('Loading demo home image')
-          const supportedFormats = ['webp', 'jpg'] // Reduced to most efficient formats
-          let foundImage = false
-          
-          for (const format of supportedFormats) {
-            const { data: publicUrlData } = supabase
+          console.log('Loading demo your home banner, attempt:', retryCount + 1)
+          // Prioritize WebP for better performance
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('property-assets')
+            .getPublicUrl('demo/your_home/banner.webp')
+
+          try {
+            const response = await fetch(publicUrlData.publicUrl, { 
+              method: 'HEAD',
+              signal: controller.signal
+            })
+            
+            if (response.ok) {
+              console.log('Successfully loaded demo your home banner')
+              if (isMounted) {
+                setImageUrl(publicUrlData.publicUrl)
+                setLoading(false)
+              }
+              return
+            }
+          } catch (err) {
+            console.log('Error checking WebP banner:', err)
+            // Fall back to JPG if WebP fails
+            const jpgData = supabase
               .storage
               .from('property-assets')
-              .getPublicUrl(`demo/your_home/image.${format}`)
+              .getPublicUrl('demo/your_home/banner.jpg')
 
-            // Verify if the image exists
-            try {
-              const response = await fetch(publicUrlData.publicUrl, { 
-                method: 'HEAD',
-                signal: abortController.signal
-              })
-              if (response.ok) {
-                console.log(`Found demo home image in ${format} format`)
-                if (isMounted) {
-                  setImageUrl(publicUrlData.publicUrl)
-                }
-                foundImage = true
-                break
-              }
-            } catch (err) {
-              console.log(`No ${format} format found for demo home image:`, err)
-            }
-          }
-
-          if (!foundImage) {
-            console.error('No supported image format found for demo home image')
             if (isMounted) {
-              setImageUrl(null)
+              setImageUrl(jpgData.data.publicUrl)
+              setLoading(false)
             }
+            return
           }
-          if (isMounted) {
-            setLoading(false)
-          }
-          return
         }
 
-        // Otherwise, query the assets table for a real property
-        console.log('Fetching home image for property:', propertyId)
+        // For real properties, query the assets table
+        console.log('Fetching your home banner for property:', propertyId, 'attempt:', retryCount + 1)
         const { data, error } = await supabase
           .from('assets')
           .select('storage_path')
@@ -79,9 +79,10 @@ export function useYourHomeImage(propertyId?: string, isDemoProperty?: boolean) 
 
         if (error) {
           if (error.code === 'PGRST116') {
-            console.log('No home image found for property')
+            console.log('No your home banner found for property')
             if (isMounted) {
               setImageUrl(null)
+              setLoading(false)
             }
             return
           }
@@ -96,20 +97,27 @@ export function useYourHomeImage(propertyId?: string, isDemoProperty?: boolean) 
 
           if (isMounted) {
             setImageUrl(publicUrlData.publicUrl)
+            setLoading(false)
           }
         } else {
           if (isMounted) {
             setImageUrl(null)
+            setLoading(false)
           }
         }
       } catch (err) {
-        console.error('Error loading home image:', err)
-        if (isMounted) {
-          setError(err instanceof Error ? err : new Error('Failed to load home image'))
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
+        console.error('Error loading your home banner:', err)
+        
+        // Implement retry logic
+        if (retryCount < MAX_RETRIES) {
+          console.log(`Retrying in ${RETRY_DELAY}ms... (${retryCount + 1}/${MAX_RETRIES})`)
+          retryCount++
+          setTimeout(loadImage, RETRY_DELAY)
+        } else {
+          if (isMounted) {
+            setError(err instanceof Error ? err : new Error('Failed to load your home banner'))
+            setLoading(false)
+          }
         }
       }
     }
@@ -118,7 +126,7 @@ export function useYourHomeImage(propertyId?: string, isDemoProperty?: boolean) 
 
     return () => {
       isMounted = false
-      abortController.abort()
+      controller.abort()
     }
   }, [supabase, propertyId, isDemoProperty])
 

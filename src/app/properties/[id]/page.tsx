@@ -5,6 +5,7 @@ import { useProperty } from '@/hooks/useProperty'
 import { CuscoTemplate } from '@/templates/cusco/page'
 import { DubaiTemplate } from '@/templates/dubai/page'
 import { useEffect } from 'react'
+import { headers } from 'next/headers'
 
 interface PropertyPageProps {
   params: Promise<{
@@ -69,5 +70,16 @@ export default function PropertyPage({ params }: PropertyPageProps) {
     case 'cusco':
     default:
       return <CuscoTemplate propertyId={id} />
+  }
+}
+
+export async function generateMetadata() {
+  const headersList = await headers()
+  return {
+    title: 'Property Details',
+    description: 'View details about the property',
+    other: {
+      'x-custom-domain': headersList.get('x-custom-domain') === 'true' ? 'true' : 'false'
+    }
   }
 }

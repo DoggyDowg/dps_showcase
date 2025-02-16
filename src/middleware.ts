@@ -6,9 +6,8 @@ import { cookies } from 'next/headers'
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host')
   const pathname = request.nextUrl.pathname
-  const url = request.url
   const searchParams = request.nextUrl.searchParams.toString()
-  const fullUrl = searchParams ? `${url}?${searchParams}` : url
+  const fullUrl = searchParams ? `${request.url}?${searchParams}` : request.url
 
   // Log every request in detail
   console.log(JSON.stringify({
@@ -17,8 +16,7 @@ export async function middleware(request: NextRequest) {
     hostname,
     pathname,
     fullUrl,
-    headers: Object.fromEntries(request.headers.entries()),
-    searchParams: searchParams || null
+    headers: Object.fromEntries(request.headers.entries())
   }))
 
   // Skip middleware for Next.js internals and static files
@@ -48,105 +46,27 @@ export async function middleware(request: NextRequest) {
   // Handle custom domains
   if (hostname && !hostname.includes('localhost') && !hostname.includes('vercel.app')) {
     try {
+      // Create Supabase client
       const supabase = createRouteHandlerClient({ cookies })
-
-      // First, let's debug what's in the database
-      const { data: allProperties, error: listError } = await supabase
+      
+      // Query the properties table to find the property with this custom domain
+      const { data: property, error } = await supabase
         .from('properties')
-        .select('id, custom_domain, status')
-        .not('custom_domain', 'is', null)
-
-      console.log(JSON.stringify({
-        message: '📋 DEBUG: All properties with custom domains',
-        properties: allProperties,
-        error: listError,
-        timestamp: new Date().toISOString()
-      }))
-
-      // First try to find the property regardless of status
-      const { data: property, error: propertyError } = await supabase
-        .from('properties')
-        .select('id, custom_domain, status')
+        .select('id, status')
         .eq('custom_domain', hostname)
+        .eq('status', 'published')
         .single()
 
-      console.log(JSON.stringify({
-        message: '🔍 DEBUG: Domain lookup result',
-        query: { custom_domain: hostname },
-        result: property,
-        error: propertyError,
-        timestamp: new Date().toISOString()
-      }))
-
-      // If property exists but isn't published, return specific error
-      if (property && property.status !== 'published') {
+      if (error || !property) {
         console.log(JSON.stringify({
-          message: '⚠️ Property found but not published',
-          property,
-          timestamp: new Date().toISOString()
-        }))
-        return NextResponse.next()
-      }
-
-      // If no exact match, try without www
-      if (propertyError && hostname.startsWith('www.')) {
-        const nonWwwHostname = hostname.replace('www.', '')
-        console.log(JSON.stringify({
-          message: '🔄 DEBUG: Trying without www',
-          originalHostname: hostname,
-          nonWwwHostname,
-          timestamp: new Date().toISOString()
-        }))
-
-        const { data: nonWwwProperty, error: nonWwwError } = await supabase
-          .from('properties')
-          .select('id, custom_domain, status')
-          .eq('custom_domain', nonWwwHostname)
-          .eq('status', 'published')
-          .single()
-
-        console.log(JSON.stringify({
-          message: '🔍 DEBUG: Non-www query result',
-          query: {
-            custom_domain: nonWwwHostname,
-            status: 'published'
-          },
-          result: nonWwwProperty,
-          error: nonWwwError,
-          timestamp: new Date().toISOString()
-        }))
-
-        if (!nonWwwError && nonWwwProperty) {
-          console.log(JSON.stringify({
-            message: '✅ Found property with non-www domain',
-            hostname: nonWwwHostname,
-            property: nonWwwProperty
-          }))
-          const newUrl = request.nextUrl.clone()
-          newUrl.pathname = `/properties/${nonWwwProperty.id}`
-          if (searchParams) newUrl.search = searchParams
-          return NextResponse.rewrite(newUrl)
-        }
-      }
-
-      if (propertyError || !property) {
-        console.log(JSON.stringify({
-          message: '❌ No property found for domain',
+          message: '❌ NO PROPERTY FOUND FOR DOMAIN',
           hostname,
-          error: propertyError?.message,
-          details: propertyError?.details,
-          timestamp: new Date().toISOString()
+          error: error?.message
         }))
         return NextResponse.next()
       }
 
-      // If we get here, we found a published property
-      console.log(JSON.stringify({
-        message: '✅ Found published property for domain',
-        hostname,
-        property
-      }))
-
+      // Rewrite to the property page
       const newUrl = request.nextUrl.clone()
       newUrl.pathname = `/properties/${property.id}`
       
@@ -164,7 +84,22 @@ export async function middleware(request: NextRequest) {
         fullTo: `${newUrl.origin}${newUrl.pathname}${newUrl.search}`
       }))
       
+      // Use redirect instead of rewrite to ensure client-side code works correctly
+      if (pathname === '/') {
+        const response = NextResponse.redirect(new URL(newUrl.pathname, request.url))
+        
+        // Add debug headers
+        response.headers.set('x-debug-redirect-from', pathname)
+        response.headers.set('x-debug-redirect-to', newUrl.pathname)
+        response.headers.set('x-debug-hostname', hostname)
+        
+        return response
+      }
+      
       const response = NextResponse.rewrite(newUrl)
+      
+      // Add special header to indicate this is a custom domain
+      response.headers.set('x-custom-domain', 'true')
       
       // Add debug headers
       response.headers.set('x-debug-rewrite-from', pathname)

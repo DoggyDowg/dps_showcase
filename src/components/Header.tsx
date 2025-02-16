@@ -28,14 +28,36 @@ export function Header({ property }: HeaderProps) {
     const handleScroll = () => {
       // Show header after scrolling 100px
       const shouldShow = window.scrollY > 100
-      setIsVisible(shouldShow)
+      if (shouldShow !== isVisible) {
+        console.log('Header visibility changing:', {
+          scrollY: window.scrollY,
+          shouldShow,
+          wasVisible: isVisible,
+          isCustomDomain: document.querySelector('meta[name="x-custom-domain"]')?.getAttribute('content') === 'true'
+        })
+        setIsVisible(shouldShow)
+      }
     }
 
-    window.addEventListener('scroll', handleScroll)
+    // Force recalculation of scroll position on custom domains
+    if (document.querySelector('meta[name="x-custom-domain"]')?.getAttribute('content') === 'true') {
+      console.log('Custom domain detected, forcing scroll recalculation')
+      setTimeout(handleScroll, 0)
+    }
+
+    // Add passive flag for better scroll performance
+    window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll() // Check initial scroll position
 
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isVisible])
+  
+  // Force header visibility on custom domains if scrolled
+  useEffect(() => {
+    if (mounted && window.scrollY > 100) {
+      setIsVisible(true)
+    }
+  }, [mounted])
   
   if (!mounted) {
     return null
