@@ -4,9 +4,8 @@ import type { NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host')
   const pathname = request.nextUrl.pathname
-  const url = request.url
   const searchParams = request.nextUrl.searchParams.toString()
-  const fullUrl = searchParams ? `${url}?${searchParams}` : url
+  const fullUrl = searchParams ? `${request.url}?${searchParams}` : request.url
 
   // Log every request in detail
   console.log(JSON.stringify({
@@ -15,8 +14,7 @@ export async function middleware(request: NextRequest) {
     hostname,
     pathname,
     fullUrl,
-    headers: Object.fromEntries(request.headers.entries()),
-    searchParams: searchParams || null
+    headers: Object.fromEntries(request.headers.entries())
   }))
 
   // Skip middleware for Next.js internals and static files
@@ -34,7 +32,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Test rewrite for www.1mackiegve.com
+  // Handle custom domain
   if (hostname === 'www.1mackiegve.com' || hostname === '1mackiegve.com') {
     const newUrl = request.nextUrl.clone()
     
@@ -65,9 +63,33 @@ export async function middleware(request: NextRequest) {
     
     const response = NextResponse.rewrite(newUrl)
     
+    // Preserve Supabase headers
+    const supabaseHeaders = [
+      'x-client-info',
+      'x-supabase-auth',
+      'authorization',
+      'apikey',
+      'x-supabase-jwt'
+    ]
+
+    const preservedHeaders = supabaseHeaders.reduce((acc, header) => {
+      const value = request.headers.get(header)
+      if (value) {
+        response.headers.set(header, value)
+        acc[header] = value
+      }
+      return acc
+    }, {} as Record<string, string>)
+
+    console.log(JSON.stringify({
+      message: '🔐 PRESERVED SUPABASE HEADERS',
+      preservedHeaders
+    }))
+    
     // Add debug headers
     response.headers.set('x-debug-rewrite-from', pathname)
     response.headers.set('x-debug-rewrite-to', newUrl.pathname)
+    response.headers.set('x-debug-hostname', hostname)
     
     return response
   }
