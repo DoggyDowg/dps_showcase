@@ -15,6 +15,7 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
   const imageRef = useRef<HTMLDivElement>(null)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
+  const scrollListenerRef = useRef<(() => void) | null>(null)
 
   // Register this banner's image as an asset to load
   useEffect(() => {
@@ -23,33 +24,48 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
     }
   }, [loading, imageSrc, registerAsset])
 
+  // Reset image loaded state when image source changes
+  useEffect(() => {
+    setIsImageLoaded(false)
+  }, [imageSrc])
+
+  // Handle scroll effects
   useEffect(() => {
     const banner = bannerRef.current
     const image = imageRef.current
     if (!banner || !image || !isImageLoaded) return
 
     const handleScroll = () => {
-      const rect = banner.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      
-      // Only apply parallax when banner is in extended viewport
-      if (rect.top < viewportHeight + 200 && rect.bottom > -200) {
-        const distanceFromCenter = rect.top - (viewportHeight / 2)
-        const parallaxOffset = Math.min(Math.max(distanceFromCenter * 0.2, -150), 150)
-        image.style.transform = `translateY(${parallaxOffset}px)`
-      }
+      requestAnimationFrame(() => {
+        const rect = banner.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        
+        // Only apply parallax when banner is in extended viewport
+        if (rect.top < viewportHeight + 200 && rect.bottom > -200) {
+          const distanceFromCenter = rect.top - (viewportHeight / 2)
+          const parallaxOffset = Math.min(Math.max(distanceFromCenter * 0.2, -150), 150)
+          image.style.transform = `translateY(${parallaxOffset}px)`
+        }
+      })
     }
 
+    // Store the handler reference for cleanup
+    scrollListenerRef.current = handleScroll
+
+    // Initial position
+    handleScroll()
+
+    // Add scroll listener
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial position
 
-    return () => window.removeEventListener('scroll', handleScroll)
+    // Cleanup
+    return () => {
+      if (scrollListenerRef.current) {
+        window.removeEventListener('scroll', scrollListenerRef.current)
+        scrollListenerRef.current = null
+      }
+    }
   }, [isImageLoaded])
-
-  // Reset image loaded state when image source changes
-  useEffect(() => {
-    setIsImageLoaded(false)
-  }, [imageSrc])
 
   return (
     <div ref={bannerRef} className="relative h-[160px] w-full overflow-hidden bg-brand-dark">

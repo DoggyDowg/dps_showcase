@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react'
 
 interface AssetLoadingContextType {
   isLoading: boolean
@@ -19,10 +19,27 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [totalAssets, setTotalAssets] = useState(0)
   const [loadedAssets, setLoadedAssets] = useState(0)
-  const [loadingStartTime] = useState(Date.now())
+  const [loadingStartTime, setLoadingStartTime] = useState(Date.now())
+  const mountedRef = useRef(true)
+
+  // Reset loading state when component mounts or unmounts
+  useEffect(() => {
+    console.log('[AssetLoading] Provider mounted')
+    setIsLoading(true)
+    setTotalAssets(0)
+    setLoadedAssets(0)
+    setLoadingStartTime(Date.now())
+
+    return () => {
+      console.log('[AssetLoading] Provider unmounting')
+      mountedRef.current = false
+    }
+  }, [])
 
   // Reset loading state when all assets are loaded
   useEffect(() => {
+    if (!mountedRef.current) return
+
     if (totalAssets > 0 && loadedAssets === totalAssets) {
       const timeElapsed = Date.now() - loadingStartTime
       const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - timeElapsed)
@@ -38,18 +55,20 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
 
       // Add a delay to ensure minimum loading time and smooth transition
       const timer = setTimeout(() => {
-        console.log('[AssetLoading] Hiding loader after minimum time')
-        setIsLoading(false)
+        if (mountedRef.current) {
+          console.log('[AssetLoading] Hiding loader after minimum time')
+          setIsLoading(false)
+        }
       }, remainingTime)
 
       return () => {
-        console.log('[AssetLoading] Cleanup timer')
         clearTimeout(timer)
       }
     }
   }, [totalAssets, loadedAssets, loadingStartTime])
 
-  const registerAsset = () => {
+  const registerAsset = useCallback(() => {
+    if (!mountedRef.current) return
     setTotalAssets(prev => {
       const newTotal = prev + 1
       console.log(`[AssetLoading] Registered new asset:`, {
@@ -59,9 +78,10 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
       })
       return newTotal
     })
-  }
+  }, [loadedAssets])
 
-  const markAssetAsLoaded = () => {
+  const markAssetAsLoaded = useCallback(() => {
+    if (!mountedRef.current) return
     setLoadedAssets(prev => {
       const newLoaded = prev + 1
       console.log(`[AssetLoading] Asset loaded:`, {
@@ -72,9 +92,10 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
       })
       return newLoaded
     })
-  }
+  }, [totalAssets])
 
-  const resetLoading = () => {
+  const resetLoading = useCallback(() => {
+    if (!mountedRef.current) return
     console.log('[AssetLoading] Reset loading state:', {
       previousTotal: totalAssets,
       previousLoaded: loadedAssets
@@ -82,10 +103,12 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     setTotalAssets(0)
     setLoadedAssets(0)
-  }
+    setLoadingStartTime(Date.now())
+  }, [totalAssets, loadedAssets])
 
   // Log state changes
   useEffect(() => {
+    if (!mountedRef.current) return
     console.log('[AssetLoading] State updated:', {
       isLoading,
       totalAssets,
