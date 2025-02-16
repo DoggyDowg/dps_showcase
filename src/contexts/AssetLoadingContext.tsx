@@ -14,6 +14,7 @@ interface AssetLoadingContextType {
 const AssetLoadingContext = createContext<AssetLoadingContextType | undefined>(undefined)
 
 const MINIMUM_LOADING_TIME = 2000 // 2 seconds minimum loading time
+const LOADING_CHECK_INTERVAL = 100 // Check loading state every 100ms
 
 export function AssetLoadingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
@@ -21,8 +22,10 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
   const [loadedAssets, setLoadedAssets] = useState(0)
   const [loadingStartTime, setLoadingStartTime] = useState(Date.now())
   const mountedRef = useRef(true)
+  const initializationTimer = useRef<NodeJS.Timeout | null>(null)
+  const loadingCheckInterval = useRef<NodeJS.Timeout | null>(null)
 
-  // Reset loading state when component mounts or unmounts
+  // Reset loading state when component mounts
   useEffect(() => {
     console.log('[AssetLoading] Provider mounted')
     setIsLoading(true)
@@ -30,13 +33,40 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
     setLoadedAssets(0)
     setLoadingStartTime(Date.now())
 
+    // Set up an interval to check loading state
+    loadingCheckInterval.current = setInterval(() => {
+      if (!mountedRef.current) return
+
+      const timeElapsed = Date.now() - loadingStartTime
+      console.log('[AssetLoading] Checking loading state:', {
+        totalAssets,
+        loadedAssets,
+        timeElapsed,
+        isLoading
+      })
+
+      // If no assets are registered within 1 second, assume everything is loaded
+      if (timeElapsed > 1000 && totalAssets === 0) {
+        console.log('[AssetLoading] No assets registered, completing load')
+        setIsLoading(false)
+      }
+    }, LOADING_CHECK_INTERVAL)
+
     return () => {
       console.log('[AssetLoading] Provider unmounting')
       mountedRef.current = false
+      
+      if (initializationTimer.current) {
+        clearTimeout(initializationTimer.current)
+      }
+      
+      if (loadingCheckInterval.current) {
+        clearInterval(loadingCheckInterval.current)
+      }
     }
   }, [])
 
-  // Reset loading state when all assets are loaded
+  // Handle loading completion
   useEffect(() => {
     if (!mountedRef.current) return
 
@@ -53,8 +83,13 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
         currentTime: Date.now()
       })
 
+      // Clear any existing timer
+      if (initializationTimer.current) {
+        clearTimeout(initializationTimer.current)
+      }
+
       // Add a delay to ensure minimum loading time and smooth transition
-      const timer = setTimeout(() => {
+      initializationTimer.current = setTimeout(() => {
         if (mountedRef.current) {
           console.log('[AssetLoading] Hiding loader after minimum time')
           setIsLoading(false)
@@ -62,7 +97,9 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
       }, remainingTime)
 
       return () => {
-        clearTimeout(timer)
+        if (initializationTimer.current) {
+          clearTimeout(initializationTimer.current)
+        }
       }
     }
   }, [totalAssets, loadedAssets, loadingStartTime])

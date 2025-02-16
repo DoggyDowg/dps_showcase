@@ -14,27 +14,55 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
   const bannerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
   const scrollListenerRef = useRef<(() => void) | null>(null)
 
   // Register this banner's image as an asset to load
   useEffect(() => {
     if (!loading && imageSrc) {
+      console.log('[ParallaxBanner] Registering asset:', imageSrc)
       registerAsset()
     }
   }, [loading, imageSrc, registerAsset])
 
-  // Reset image loaded state when image source changes
+  // Reset states when image source changes
   useEffect(() => {
+    console.log('[ParallaxBanner] Image source changed, resetting states')
     setIsImageLoaded(false)
+    setIsInitialized(false)
   }, [imageSrc])
+
+  // Initialize parallax effect
+  useEffect(() => {
+    if (!bannerRef.current || !imageRef.current || !isImageLoaded) {
+      console.log('[ParallaxBanner] Waiting for initialization...', {
+        hasBannerRef: !!bannerRef.current,
+        hasImageRef: !!imageRef.current,
+        isImageLoaded
+      })
+      return
+    }
+
+    console.log('[ParallaxBanner] Initializing parallax effect')
+    setIsInitialized(true)
+  }, [isImageLoaded])
 
   // Handle scroll effects
   useEffect(() => {
+    if (!isInitialized) {
+      console.log('[ParallaxBanner] Not initialized yet, skipping scroll handler setup')
+      return
+    }
+
     const banner = bannerRef.current
     const image = imageRef.current
-    if (!banner || !image || !isImageLoaded) return
+    if (!banner || !image) {
+      console.error('[ParallaxBanner] Missing refs after initialization')
+      return
+    }
 
+    console.log('[ParallaxBanner] Setting up scroll handler')
     const handleScroll = () => {
       requestAnimationFrame(() => {
         const rect = banner.getBoundingClientRect()
@@ -60,12 +88,13 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
 
     // Cleanup
     return () => {
+      console.log('[ParallaxBanner] Cleaning up scroll handler')
       if (scrollListenerRef.current) {
         window.removeEventListener('scroll', scrollListenerRef.current)
         scrollListenerRef.current = null
       }
     }
-  }, [isImageLoaded])
+  }, [isInitialized])
 
   return (
     <div ref={bannerRef} className="relative h-[160px] w-full overflow-hidden bg-brand-dark">
@@ -86,6 +115,7 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
               sizes="100vw"
               className="object-cover"
               onLoad={() => {
+                console.log('[ParallaxBanner] Image loaded:', imageSrc)
                 setIsImageLoaded(true)
                 markAssetAsLoaded()
               }}
