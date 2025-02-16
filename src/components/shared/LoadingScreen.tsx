@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 import Image from 'next/image'
+import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 
 export default function LoadingScreen() {
   const { isLoading, totalAssets, loadedAssets } = useAssetLoading()
