@@ -9,6 +9,13 @@ import { usePropertyLogo } from '@/hooks/usePropertyLogo'
 import styles from '@/styles/Header.module.css'
 import type { Property } from '@/types/property'
 
+// Add type declaration at the top of the file
+declare global {
+  interface Window {
+    __CUSTOM_DOMAIN__?: boolean;
+  }
+}
+
 const LOGO_HEIGHT = 44
 const MAX_LOGO_WIDTH = 200
 
@@ -33,14 +40,14 @@ export function Header({ property }: HeaderProps) {
           scrollY: window.scrollY,
           shouldShow,
           wasVisible: isVisible,
-          isCustomDomain: document.querySelector('meta[name="x-custom-domain"]')?.getAttribute('content') === 'true'
+          isCustomDomain: window.__CUSTOM_DOMAIN__
         })
         setIsVisible(shouldShow)
       }
     }
 
     // Force recalculation of scroll position on custom domains
-    if (document.querySelector('meta[name="x-custom-domain"]')?.getAttribute('content') === 'true') {
+    if (window.__CUSTOM_DOMAIN__) {
       console.log('Custom domain detected, forcing scroll recalculation')
       setTimeout(handleScroll, 0)
     }

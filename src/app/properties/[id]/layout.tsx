@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import Script from 'next/script'
 
 export async function generateMetadata() {
   const headersList = headers()
@@ -21,7 +22,9 @@ export default function PropertyLayout({
 
   return (
     <>
-      <meta name="x-custom-domain" content={isCustomDomain ? 'true' : 'false'} />
+      <Script id="custom-domain-detector">
+        {`window.__CUSTOM_DOMAIN__ = ${isCustomDomain};`}
+      </Script>
       {children}
     </>
   )
