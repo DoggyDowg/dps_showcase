@@ -63,20 +63,40 @@ export async function middleware(request: NextRequest) {
           table: 'properties',
           custom_domain: hostname,
           status: 'published'
-        }
+        },
+        timestamp: new Date().toISOString()
+      }, null, 2))
+
+      // Try both with and without www prefix
+      const possibleDomains = [hostname]
+      if (hostname?.startsWith('www.')) {
+        possibleDomains.push(hostname.replace('www.', ''))
+      } else if (hostname) {
+        possibleDomains.push(`www.${hostname}`)
+      }
+
+      console.log(JSON.stringify({
+        message: '🔍 Trying possible domain variations',
+        possibleDomains,
+        timestamp: new Date().toISOString()
       }, null, 2))
 
       const { data: property, error } = await supabase
         .from('properties')
         .select('id, status, custom_domain')
-        .or(`custom_domain.eq.${hostname},custom_domain.eq.www.${hostname}`)
+        .in('custom_domain', possibleDomains)
         .eq('status', 'published')
         .single()
 
       console.log(JSON.stringify({
         message: '📊 SUPABASE QUERY RESULT',
         property,
-        error,
+        error: error ? {
+          message: error.message,
+          code: error.code,
+          details: error.details
+        } : null,
+        possibleDomains,
         timestamp: new Date().toISOString()
       }, null, 2))
 
@@ -84,7 +104,12 @@ export async function middleware(request: NextRequest) {
         console.log(JSON.stringify({
           message: '❌ NO PROPERTY FOUND FOR DOMAIN',
           hostname,
+          possibleDomains,
           error: error?.message,
+          details: {
+            code: error?.code,
+            details: error?.details
+          },
           timestamp: new Date().toISOString()
         }, null, 2))
         return NextResponse.next()
