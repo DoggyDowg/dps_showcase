@@ -14,7 +14,6 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
   const bannerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false)
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
   const scrollListenerRef = useRef<(() => void) | null>(null)
 
@@ -26,55 +25,36 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
     }
   }, [loading, imageSrc, registerAsset])
 
-  // Reset states when image source changes
+  // Reset image loaded state when source changes
   useEffect(() => {
-    console.log('[ParallaxBanner] Image source changed, resetting states')
     setIsImageLoaded(false)
-    setIsInitialized(false)
   }, [imageSrc])
-
-  // Initialize parallax effect
-  useEffect(() => {
-    if (!bannerRef.current || !imageRef.current || !isImageLoaded) {
-      console.log('[ParallaxBanner] Waiting for initialization...', {
-        hasBannerRef: !!bannerRef.current,
-        hasImageRef: !!imageRef.current,
-        isImageLoaded
-      })
-      return
-    }
-
-    console.log('[ParallaxBanner] Initializing parallax effect')
-    setIsInitialized(true)
-  }, [isImageLoaded])
 
   // Handle scroll effects
   useEffect(() => {
-    if (!isInitialized) {
-      console.log('[ParallaxBanner] Not initialized yet, skipping scroll handler setup')
-      return
-    }
-
-    const banner = bannerRef.current
-    const image = imageRef.current
-    if (!banner || !image) {
-      console.error('[ParallaxBanner] Missing refs after initialization')
+    if (!isImageLoaded || !bannerRef.current || !imageRef.current) {
+      console.log('[ParallaxBanner] Not ready for scroll effects:', {
+        isImageLoaded,
+        hasBannerRef: !!bannerRef.current,
+        hasImageRef: !!imageRef.current
+      })
       return
     }
 
     console.log('[ParallaxBanner] Setting up scroll handler')
+    
     const handleScroll = () => {
-      requestAnimationFrame(() => {
-        const rect = banner.getBoundingClientRect()
-        const viewportHeight = window.innerHeight
-        
-        // Only apply parallax when banner is in extended viewport
-        if (rect.top < viewportHeight + 200 && rect.bottom > -200) {
-          const distanceFromCenter = rect.top - (viewportHeight / 2)
-          const parallaxOffset = Math.min(Math.max(distanceFromCenter * 0.2, -150), 150)
-          image.style.transform = `translateY(${parallaxOffset}px)`
-        }
-      })
+      if (!bannerRef.current || !imageRef.current) return
+      
+      const rect = bannerRef.current.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      
+      // Only apply parallax when banner is in view
+      if (rect.top < viewportHeight && rect.bottom > 0) {
+        const scrollProgress = (viewportHeight - rect.top) / (viewportHeight + rect.height)
+        const parallaxOffset = Math.min(Math.max(scrollProgress * 100 - 50, -50), 50)
+        imageRef.current.style.transform = `translateY(${parallaxOffset}px)`
+      }
     }
 
     // Store the handler reference for cleanup
@@ -83,7 +63,7 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
     // Initial position
     handleScroll()
 
-    // Add scroll listener
+    // Add scroll listener with passive flag for better performance
     window.addEventListener('scroll', handleScroll, { passive: true })
 
     // Cleanup
@@ -94,7 +74,7 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
         scrollListenerRef.current = null
       }
     }
-  }, [isInitialized])
+  }, [isImageLoaded])
 
   return (
     <div ref={bannerRef} className="relative h-[160px] w-full overflow-hidden bg-brand-dark">

@@ -5,6 +5,7 @@ import { useInView } from 'react-intersection-observer'
 import Image from 'next/image'
 import { useGalleryImages } from '@/hooks/useGalleryImages'
 import { FullscreenGallery } from './FullscreenGallery'
+import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 import styles from '@/styles/TransitionGallery.module.css'
 import type { Property } from '@/types/property'
 
@@ -51,15 +52,23 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
   })
   const { images, loading, error } = useGalleryImages(property.id, property.is_demo)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
-  const [copySuccess, setCopySuccess] = useState(false)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const { registerAsset, markAssetAsLoaded } = useAssetLoading()
 
-  // Add debugging logs
+  // Register gallery images as assets
   useEffect(() => {
-    console.log('TransitionGallery - Loading:', loading)
-    console.log('TransitionGallery - Images:', images)
-    console.log('TransitionGallery - Error:', error)
-    console.log('TransitionGallery - InView:', inView)
-  }, [loading, images, error, inView])
+    if (!loading && images.length > 0) {
+      console.log('[TransitionGallery] Registering gallery images:', images.length)
+      images.forEach(() => registerAsset())
+    }
+  }, [loading, images, registerAsset])
+
+  // Handle image load
+  const handleImageLoad = (imageId: string) => {
+    console.log('[TransitionGallery] Image loaded:', imageId)
+    setLoadedImages(prev => new Set([...prev, imageId]))
+    markAssetAsLoaded()
+  }
 
   // Scroll the gallery left or right
   const scroll = (direction: 'left' | 'right') => {
@@ -103,28 +112,33 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
     )
   }
 
+  // Handle image click for fullscreen view
   const handleImageClick = (index: number) => {
     setSelectedImageIndex(index)
   }
 
-  const handleCloseFullscreen = () => {
-    setSelectedImageIndex(null)
-  }
+  // Add debugging logs
+  useEffect(() => {
+    console.log('[TransitionGallery] State:', {
+      loading,
+      imagesCount: images.length,
+      error,
+      inView,
+      loadedImagesCount: loadedImages.size
+    })
+  }, [loading, images, error, inView, loadedImages])
 
-  // Show loading state
   if (loading) {
     return (
-      <section className="relative py-16 bg-brand-dark">
+      <section ref={sectionRef} className="relative py-16 bg-brand-dark">
         <div className="relative w-full overflow-hidden px-6 sm:px-8 lg:px-12">
           <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2 px-1 mx-auto max-w-[1400px]">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4].map((_, index) => (
               <div
-                key={i}
+                key={index}
                 className="flex-shrink-0 flex-grow-0 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
               >
-                <div className={styles.imageContainer}>
-                  <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
-                </div>
+                <div className="relative pb-[66.67%] bg-gray-200 animate-pulse rounded-lg" />
               </div>
             ))}
           </div>
@@ -133,21 +147,14 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
     )
   }
 
-  // Show error state
-  if (error) {
-    console.error('Gallery Error:', error)
-    return null
-  }
-
-  // Show empty state
-  if (!loading && (!images || images.length === 0)) {
-    console.log('No images to display')
+  if (error || !images.length) {
+    console.error('[TransitionGallery] Error or no images:', error)
     return null
   }
 
   return (
     <>
-      <section ref={sectionRef} className="relative py-16 bg-brand-dark overflow-hidden">
+      <section ref={sectionRef} className="relative py-16 bg-brand-dark">
         <div className="relative w-full overflow-hidden px-6 sm:px-8 lg:px-12">
           {/* Left Chevron */}
           <button
@@ -163,7 +170,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
           {/* Images */}
           <div
             ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth py-2 px-1 mx-auto max-w-[1400px]"
+            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth py-2 px-1 mx-auto max-w-[1400px]"
           >
             {images.map((image, index) => (
               <div
@@ -178,14 +185,15 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
                 }}
                 onClick={() => handleImageClick(index)}
               >
-                <div className={styles.imageContainer}>
+                <div className="relative pb-[66.67%]">
                   <Image
                     src={image.src}
                     alt={image.alt}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    className="object-cover"
+                    className="object-cover rounded-lg"
                     priority={index < 4}
+                    onLoad={() => handleImageLoad(image.id)}
                   />
                 </div>
               </div>
@@ -277,7 +285,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
         <FullscreenGallery
           images={images}
           initialIndex={selectedImageIndex}
-          onClose={handleCloseFullscreen}
+          onClose={() => setSelectedImageIndex(null)}
         />
       )}
     </>
