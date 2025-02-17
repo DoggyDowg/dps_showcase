@@ -31,9 +31,21 @@ export function Header({ property }: HeaderProps) {
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
   const isCustomDomain = typeof window !== 'undefined' ? window.__CUSTOM_DOMAIN__ : false
 
+  // Debug logging for custom domain issues
+  useEffect(() => {
+    console.log('[Header] Initialization:', {
+      isCustomDomain,
+      logoUrl,
+      propertyId: property.id,
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'SSR',
+      windowObject: typeof window !== 'undefined' ? 'Available' : 'Not Available'
+    });
+  }, [isCustomDomain, logoUrl, property.id]);
+
   // Register logo as an asset to load
   useEffect(() => {
     if (logoUrl) {
+      console.log('[Header] Registering logo asset:', logoUrl);
       registerAsset()
     }
   }, [logoUrl, registerAsset])
@@ -41,19 +53,25 @@ export function Header({ property }: HeaderProps) {
   useEffect(() => {
     const handleScroll = () => {
       requestAnimationFrame(() => {
-        const shouldShow = window.scrollY > 100
+        const scrollY = window.scrollY;
+        const shouldShow = scrollY > 100;
+        console.log('[Header] Scroll event:', { scrollY, shouldShow, isVisible });
         setIsVisible(shouldShow)
       })
     }
 
     if (logoLoaded) {
+      console.log('[Header] Setting up scroll listener');
       window.addEventListener('scroll', handleScroll, { passive: true })
       // Check initial scroll position after logo is loaded
       handleScroll()
     }
 
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [logoLoaded])
+    return () => {
+      console.log('[Header] Cleaning up scroll listener');
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [logoLoaded, isVisible])
   
   return (
     <header className={`${styles.header} ${isVisible ? styles.visible : ''} relative z-[100]`}>
