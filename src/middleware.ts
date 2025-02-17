@@ -16,21 +16,30 @@ export async function middleware(request: NextRequest) {
 
     // Get the hostname (e.g., www.1mackiegve.com)
     const hostname = request.headers.get('host')
+    
+    // Add more detailed logging
     console.log('[Middleware] Processing request:', {
       hostname,
       path: request.nextUrl.pathname,
-      userAgent: request.headers.get('user-agent')
+      headers: Object.fromEntries(request.headers.entries())
     });
 
     // Handle specific domain routing
     if (hostname?.includes('1mackiegve.com')) {
-      // Set custom domain flag
-      requestHeaders.set('x-custom-domain', 'true')
+      // Set custom domain flag in a way that persists to the client
+      const customDomainResponse = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      })
+      
+      // Add custom domain header
+      customDomainResponse.headers.set('x-is-custom-domain', 'true')
       
       // If it's not the root path, continue as normal
       if (request.nextUrl.pathname !== '/') {
         console.log('[Middleware] Non-root path on custom domain:', request.nextUrl.pathname);
-        return response
+        return customDomainResponse
       }
 
       // For the root path of this domain, we'll fetch the property data
@@ -38,7 +47,7 @@ export async function middleware(request: NextRequest) {
       const { data: property } = await supabase
         .from('properties')
         .select('*')
-        .eq('custom_domain', 'www.1mackiegve.com')
+        .eq('custom_domain', hostname)
         .single()
 
       if (property) {
@@ -46,7 +55,9 @@ export async function middleware(request: NextRequest) {
         // Rewrite to the property page but keep the URL as root
         const url = request.nextUrl.clone()
         url.pathname = `/properties/${property.id}`
-        return NextResponse.rewrite(url)
+        return NextResponse.rewrite(url, {
+          headers: customDomainResponse.headers
+        })
       }
     }
 

@@ -29,18 +29,26 @@ export function Header({ property }: HeaderProps) {
   const [logoLoaded, setLogoLoaded] = useState(false)
   const { logoUrl } = usePropertyLogo(property.id)
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
-  const isCustomDomain = typeof window !== 'undefined' ? window.__CUSTOM_DOMAIN__ : false
+  const [isCustomDomain, setIsCustomDomain] = useState(false)
 
   // Debug logging for custom domain issues
   useEffect(() => {
-    console.log('[Header] Initialization:', {
-      isCustomDomain,
-      logoUrl,
-      propertyId: property.id,
-      hostname: typeof window !== 'undefined' ? window.location.hostname : 'SSR',
-      windowObject: typeof window !== 'undefined' ? 'Available' : 'Not Available'
+    // Check for custom domain header
+    const isCustomDomain = document.cookie.includes('is_custom_domain=true') || 
+                          document.querySelector('meta[name="is-custom-domain"]')?.getAttribute('content') === 'true'
+    
+    console.log('[Header] Custom domain detection:', {
+      fromCookie: document.cookie.includes('is_custom_domain=true'),
+      fromMeta: document.querySelector('meta[name="is-custom-domain"]')?.getAttribute('content'),
+      finalValue: isCustomDomain
     });
-  }, [isCustomDomain, logoUrl, property.id]);
+
+    if (typeof window !== 'undefined') {
+      window.__CUSTOM_DOMAIN__ = isCustomDomain
+    }
+    
+    setIsCustomDomain(isCustomDomain)
+  }, [])
 
   // Register logo as an asset to load
   useEffect(() => {
