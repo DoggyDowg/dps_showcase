@@ -1,7 +1,7 @@
 'use client'
 
 import { useProperty } from '@/hooks/useProperty'
-import { ClientLayout } from '@/components/layouts/ClientLayout'
+import ClientLayout from '@/components/layouts/ClientLayout'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
 import { TransitionGallery } from './components/TransitionGallery'

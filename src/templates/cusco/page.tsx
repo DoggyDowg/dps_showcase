@@ -11,7 +11,7 @@ import { Viewings } from '@/components/Viewings'
 import { Footer } from '@/components/Footer'
 import { TransitionGallery } from '@/components/TransitionGallery'
 import { MoreInfo } from '@/components/MoreInfo'
-import { ClientLayout } from '@/components/layouts/ClientLayout'
+import ClientLayout from '@/components/layouts/ClientLayout'
 import { Contact } from '@/components/Contact'
 import CustomChat from '@/components/shared/CustomChat'
 
