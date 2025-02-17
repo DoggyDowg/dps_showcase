@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import { useEffect, useRef } from 'react';
 
 interface VirtualTourProps {
   modelPath: string;
@@ -77,7 +77,7 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     // Environment map
     new RGBELoader()
       .setPath('/envmaps/')
-      .load('royal_esplanade_1k.hdr', (texture: THREE.Texture) => {
+      .load('royal_esplanade_1k.hdr', (texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
         scene.background = new THREE.Color(0xffffff);  // Use white background instead
@@ -97,7 +97,7 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     const loader = new GLTFLoader();
     loader.load(
       modelPath,
-      (gltf: GLTF) => {
+      (gltf) => {
         // Center model
         const box = new THREE.Box3().setFromObject(gltf.scene);
         const center = box.getCenter(new THREE.Vector3());
@@ -120,11 +120,11 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
         controls.target.set(0, 0, 0);
         controls.update();
       },
-      (progress: { loaded: number; total: number }) => {
+      (progress) => {
         const percent = (progress.loaded / progress.total) * 100;
         console.log('Loading progress:', percent, '%');
       },
-      (error: unknown) => {
+      (error) => {
         console.error('Error loading model:', error instanceof Error ? error.message : 'Unknown error');
       }
     );

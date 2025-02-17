@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { HeaderLink } from './shared/HeaderLink'
 import { MobileMenu } from './shared/MobileMenu'
 import { usePropertyLogo } from '@/hooks/usePropertyLogo'
+import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 import styles from '@/styles/Header.module.css'
 import type { Property } from '@/types/property'
 
@@ -16,30 +17,43 @@ interface HeaderProps {
   property: Property
 }
 
+declare global {
+  interface Window {
+    __CUSTOM_DOMAIN__?: boolean;
+  }
+}
+
 export function Header({ property }: HeaderProps) {
-  const [mounted, setMounted] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [logoLoaded, setLogoLoaded] = useState(false)
   const { logoUrl } = usePropertyLogo(property.id)
+  const { registerAsset, markAssetAsLoaded } = useAssetLoading()
+  const isCustomDomain = typeof window !== 'undefined' ? window.__CUSTOM_DOMAIN__ : false
+
+  // Register logo as an asset to load
+  useEffect(() => {
+    if (logoUrl) {
+      registerAsset()
+    }
+  }, [logoUrl, registerAsset])
 
   useEffect(() => {
-    setMounted(true)
-
     const handleScroll = () => {
-      // Show header after scrolling 100px
-      const shouldShow = window.scrollY > 100
-      setIsVisible(shouldShow)
+      requestAnimationFrame(() => {
+        const shouldShow = window.scrollY > 100
+        setIsVisible(shouldShow)
+      })
     }
 
-    window.addEventListener('scroll', handleScroll)
-    handleScroll() // Check initial scroll position
+    if (logoLoaded) {
+      window.addEventListener('scroll', handleScroll, { passive: true })
+      // Check initial scroll position after logo is loaded
+      handleScroll()
+    }
 
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-  
-  if (!mounted) {
-    return null
-  }
+  }, [logoLoaded])
   
   return (
     <header className={`${styles.header} ${isVisible ? styles.visible : ''} relative z-[100]`}>
@@ -54,7 +68,11 @@ export function Header({ property }: HeaderProps) {
 
           {/* Centered Logo */}
           <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
-            <Link href="/" prefetch={false} className="block">
+            <Link 
+              href={isCustomDomain ? "/" : `/properties/${property.id}`} 
+              prefetch={false} 
+              className="block"
+            >
               {logoUrl ? (
                 <Image
                   src={logoUrl}
@@ -63,6 +81,10 @@ export function Header({ property }: HeaderProps) {
                   height={LOGO_HEIGHT}
                   priority
                   className="object-contain w-auto h-[44px]"
+                  onLoad={() => {
+                    setLogoLoaded(true)
+                    markAssetAsLoaded()
+                  }}
                 />
               ) : (
                 <div 

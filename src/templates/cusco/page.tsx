@@ -14,7 +14,6 @@ import { MoreInfo } from '@/components/MoreInfo'
 import { ClientLayout } from '@/components/layouts/ClientLayout'
 import { Contact } from '@/components/Contact'
 import CustomChat from '@/components/shared/CustomChat'
-import LoadingScreen from '@/components/shared/LoadingScreen'
 
 interface CuscoTemplateProps {
   propertyId: string
@@ -50,7 +49,6 @@ export function CuscoTemplate({ propertyId, templateStyle = 'cusco' }: CuscoTemp
 
   return (
     <ClientLayout property={property}>
-      {property.is_demo && <LoadingScreen />}
       <main className="min-h-screen overflow-x-hidden">
         <Header property={property} />
         <HeroComponent property={property} />

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 
 interface ParallaxBannerProps {
   imageSrc: string
@@ -9,41 +10,74 @@ interface ParallaxBannerProps {
   loading?: boolean
 }
 
-export function ParallaxBanner({ imageSrc, title, loading }: ParallaxBannerProps) {
+export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBannerProps) {
   const bannerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
+  const { registerAsset, markAssetAsLoaded } = useAssetLoading()
+  const scrollListenerRef = useRef<(() => void) | null>(null)
 
+  // Register this banner's image as an asset to load
   useEffect(() => {
-    const banner = bannerRef.current
-    const image = imageRef.current
-    if (!banner || !image || !isImageLoaded) return
-
-    const handleScroll = () => {
-      const rect = banner.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      
-      // Only apply parallax when banner is in extended viewport
-      if (rect.top < viewportHeight + 200 && rect.bottom > -200) {
-        const distanceFromCenter = rect.top - (viewportHeight / 2)
-        const parallaxOffset = Math.min(Math.max(distanceFromCenter * 0.2, -150), 150)
-        image.style.transform = `translateY(${parallaxOffset}px)`
-      }
+    if (!loading && imageSrc) {
+      console.log('[ParallaxBanner] Registering asset:', imageSrc)
+      registerAsset()
     }
+  }, [loading, imageSrc, registerAsset])
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial position
-
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [isImageLoaded])
-
-  // Reset image loaded state when image source changes
+  // Reset image loaded state when source changes
   useEffect(() => {
     setIsImageLoaded(false)
   }, [imageSrc])
 
+  // Handle scroll effects
+  useEffect(() => {
+    if (!isImageLoaded || !bannerRef.current || !imageRef.current) {
+      console.log('[ParallaxBanner] Not ready for scroll effects:', {
+        isImageLoaded,
+        hasBannerRef: !!bannerRef.current,
+        hasImageRef: !!imageRef.current
+      })
+      return
+    }
+
+    console.log('[ParallaxBanner] Setting up scroll handler')
+    
+    const handleScroll = () => {
+      if (!bannerRef.current || !imageRef.current) return
+      
+      const rect = bannerRef.current.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      
+      // Only apply parallax when banner is in view
+      if (rect.top < viewportHeight && rect.bottom > 0) {
+        const scrollProgress = (viewportHeight - rect.top) / (viewportHeight + rect.height)
+        const parallaxOffset = Math.min(Math.max(scrollProgress * 100 - 50, -50), 50)
+        imageRef.current.style.transform = `translateY(${parallaxOffset}px)`
+      }
+    }
+
+    // Store the handler reference for cleanup
+    scrollListenerRef.current = handleScroll
+
+    // Initial position
+    handleScroll()
+
+    // Add scroll listener with passive flag for better performance
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    // Cleanup
+    return () => {
+      console.log('[ParallaxBanner] Cleaning up scroll handler')
+      if (scrollListenerRef.current) {
+        window.removeEventListener('scroll', scrollListenerRef.current)
+        scrollListenerRef.current = null
+      }
+    }
+  }, [isImageLoaded])
+
   return (
-    <div ref={bannerRef} className="relative h-[160px] w-full overflow-hidden">
+    <div ref={bannerRef} className="relative h-[160px] w-full overflow-hidden bg-brand-dark">
       {loading ? (
         <div className="absolute inset-0 bg-gray-200 animate-pulse" />
       ) : (
@@ -55,21 +89,27 @@ export function ParallaxBanner({ imageSrc, title, loading }: ParallaxBannerProps
           >
             <Image
               src={imageSrc}
-              alt={`${title} Banner`}
+              alt={title}
               fill
-              className="object-cover"
               priority
               sizes="100vw"
-              onLoad={() => setIsImageLoaded(true)}
+              className="object-cover"
+              onLoad={() => {
+                console.log('[ParallaxBanner] Image loaded:', imageSrc)
+                setIsImageLoaded(true)
+                markAssetAsLoaded()
+              }}
             />
           </div>
           {/* Overlay */}
-          <div className="absolute inset-0 bg-black opacity-20" />
+          <div className="absolute inset-0 bg-brand-dark/50" />
         </div>
       )}
       {/* Content */}
       <div className="relative h-full max-w-7xl mx-auto px-4 flex items-center justify-center">
-        <h2 className="text-4xl font-light text-brand-light">{title}</h2>
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-light text-brand-light tracking-wider">
+          {title}
+        </h2>
       </div>
     </div>
   )

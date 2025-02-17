@@ -6,6 +6,7 @@ import { ParallaxBanner } from './shared/ParallaxBanner'
 import { HomeGallery } from './HomeGallery'
 import { useFeaturesBanner } from '@/hooks/useFeaturesBanner'
 import { useYourHomeImage } from '@/hooks/useYourHomeImage'
+import { useAssetLoading } from '@/contexts/AssetLoadingContext'
 import type { Property } from '@/types/property'
 import dynamic from 'next/dynamic'
 
@@ -35,24 +36,43 @@ export function YourHome({ property }: YourHomeProps) {
   const [isFeaturesVisible, setIsFeaturesVisible] = useState(false)
   const { imageUrl: bannerUrl, loading: bannerLoading } = useFeaturesBanner(property.id, property.is_demo)
   const { imageUrl: homeImageUrl, loading: homeImageLoading } = useYourHomeImage(property.id, property.is_demo)
+  const { registerAsset, markAssetAsLoaded } = useAssetLoading()
   const { content } = property
   const featuresData = content.features || { items: [], header: '', headline: '', description: '' }
+  const observerRef = useRef<IntersectionObserver | null>(null)
 
-  // Debug log for virtual tour
+  // Register assets
   useEffect(() => {
-    console.log('YourHome render - property:', {
-      id: property.id,
-      is_demo: property.is_demo
-    });
-  }, [property]);
+    if (!bannerLoading && bannerUrl) {
+      console.log('[YourHome] Registering banner asset')
+      registerAsset()
+    }
+    if (!homeImageLoading && homeImageUrl) {
+      console.log('[YourHome] Registering home image asset')
+      registerAsset()
+    }
+  }, [bannerLoading, bannerUrl, homeImageLoading, homeImageUrl, registerAsset])
 
+  // Set up intersection observers
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    // Create new observer
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setIsVisible(true)
-            observer.disconnect()
+            if (entry.target === imageRef.current) {
+              console.log('[YourHome] Main image in view')
+              setIsVisible(true)
+            }
+            if (entry.target === featuresRef.current) {
+              console.log('[YourHome] Features section in view')
+              setIsFeaturesVisible(true)
+            }
           }
         })
       },
@@ -62,64 +82,64 @@ export function YourHome({ property }: YourHomeProps) {
       }
     )
 
+    // Observe elements
     if (imageRef.current) {
-      observer.observe(imageRef.current)
+      observerRef.current.observe(imageRef.current)
     }
-
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsFeaturesVisible(true)
-            observer.disconnect()
-          }
-        })
-      },
-      { 
-        threshold: 0.1,
-        rootMargin: '50px'
-      }
-    )
-
     if (featuresRef.current) {
-      observer.observe(featuresRef.current)
+      observerRef.current.observe(featuresRef.current)
     }
 
-    return () => observer.disconnect()
+    // Cleanup
+    return () => {
+      console.log('[YourHome] Cleaning up observers')
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+        observerRef.current = null
+      }
+    }
   }, [])
 
   return (
-    <div className="flex flex-col">
-      <div id="features">
-        <ParallaxBanner
-          imageSrc={bannerUrl || '/images/banners/yourhome.jpg'}
-          title={featuresData.banner_title || "YOUR HOME"}
-          loading={bannerLoading}
-        />
-      </div>
+    <>
+      {/* Banner Section */}
+      <ParallaxBanner
+        imageSrc={bannerUrl || '/images/sections/features/features-banner.jpg'}
+        title={featuresData.header || "Your Home"}
+        loading={bannerLoading}
+      />
 
-      {/* Content Section */}
-      <section className="pt-20 pb-20 px-6 sm:px-8 lg:px-12 bg-brand-light">
-        <div className="max-w-7xl mx-auto">
-          {/* Main Content Grid */}
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Text Content */}
-            <div 
-              className="prose prose-lg max-w-none text-brand-dark prose-ul:text-brand-dark prose-li:marker:text-brand-dark transition-all duration-1000"
-              style={{ 
-                opacity: isVisible ? 1 : 0,
-                transform: `translateY(${isVisible ? '0' : '40px'})`
-              }}
-            >
-              <h3 className="text-3xl font-light mb-6 text-brand-dark">{featuresData.headline}</h3>
-              <p className="text-brand-dark">{featuresData.description || featuresData.header}</p>
+      {/* Main Content */}
+      <section className="py-16 md:py-24 bg-brand-light">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
+            {/* Text Content */}
+            <div className="flex flex-col justify-center">
+              <h2 className="text-4xl sm:text-5xl font-light text-brand-dark mb-6">
+                {featuresData.headline || "Experience Luxury Living"}
+              </h2>
+              <p className="text-xl text-brand-dark/80 mb-8">
+                {featuresData.description || "Where every detail has been carefully considered to create an unparalleled living experience."}
+              </p>
+              <div 
+                ref={featuresRef}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-8"
+                style={{
+                  opacity: isFeaturesVisible ? 1 : 0,
+                  transform: `translateY(${isFeaturesVisible ? '0' : '40px'})`,
+                  transition: 'all 800ms cubic-bezier(0.4, 0, 0.2, 1)',
+                  transitionDelay: '200ms'
+                }}
+              >
+                {featuresData.items.map((feature, index) => (
+                  <div key={index} className="flex flex-col">
+                    <h3 className="text-xl font-medium text-brand-dark mb-2">{feature.feature}</h3>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Right Column - Image */}
+            {/* Image */}
             <div 
               ref={imageRef}
               className="relative h-[400px] transition-all duration-1000"
@@ -138,6 +158,10 @@ export function YourHome({ property }: YourHomeProps) {
                   fill
                   className="object-cover rounded-lg shadow-xl"
                   priority
+                  onLoad={() => {
+                    console.log('[YourHome] Home image loaded')
+                    markAssetAsLoaded()
+                  }}
                 />
               ) : (
                 <Image
@@ -145,6 +169,10 @@ export function YourHome({ property }: YourHomeProps) {
                   alt="Your Home Feature"
                   fill
                   className="object-cover rounded-lg shadow-xl"
+                  onLoad={() => {
+                    console.log('[YourHome] Fallback image loaded')
+                    markAssetAsLoaded()
+                  }}
                 />
               )}
             </div>
@@ -153,55 +181,10 @@ export function YourHome({ property }: YourHomeProps) {
       </section>
 
       {/* Gallery Section */}
-      <section className="relative bg-brand-dark isolate">
-        {/* Background Image (Blurred) */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-xl -z-10"
-          style={{ 
-            backgroundImage: `url(${homeImageUrl || '/images/sections/yourhome/yourhome.jpg'})`,
-            opacity: 0.5,
-            transform: 'scale(1.1)'
-          }}
-        />
-        
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-brand-dark/70 -z-10" />
-
-        {/* Content */}
-        <div className="relative px-12 py-16">
-          {/* Features Grid */}
-          <div ref={featuresRef} className="max-w-7xl mx-auto mb-8">
-            <h4 className="text-2xl font-light mb-4 text-brand-light text-center">Home Highlights</h4>
-            <div className="flex flex-wrap justify-center gap-3">
-              {featuresData.items?.filter(item => item.feature?.trim()).map((feature, index) => (
-                <div 
-                  key={index}
-                  className="[background-color:rgb(var(--brand-light)/0.1)] [border-color:rgb(var(--brand-light)/0.2)] backdrop-blur-sm px-4 py-2 rounded-full shadow-sm text-brand-light text-center font-light border inline-block text-sm transition-all duration-800"
-                  style={{ 
-                    opacity: isFeaturesVisible ? 1 : 0,
-                    transform: `translateY(${isFeaturesVisible ? '0' : '20px'})`,
-                    transitionDelay: `${index * 100}ms`
-                  }}
-                >
-                  {feature.feature}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Gallery */}
-          <div className="max-w-7xl mx-auto">
-            <HomeGallery property={property} />
-          </div>
-        </div>
-      </section>
+      <HomeGallery property={property} />
 
       {/* Virtual Tour Section */}
-      <section id="virtual-tour" className="bg-white">
-        <div className="max-w-7xl mx-auto w-full">
-          <VirtualTourSection property={property} />
-        </div>
-      </section>
-    </div>
+      <VirtualTourSection property={property} />
+    </>
   )
 } 

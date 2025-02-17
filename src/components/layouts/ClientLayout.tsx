@@ -14,7 +14,7 @@ interface ClientLayoutProps {
 export function ClientLayout({ property, children }: ClientLayoutProps) {
   return (
     <AssetLoadingProvider>
-      <LoadingScreen />
+      {property.is_demo && <LoadingScreen />}
       <BrandColorInitializer property={property} />
       <BrandFontInitializer property={property} />
       {children}
