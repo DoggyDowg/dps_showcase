@@ -70,39 +70,43 @@ export function AssetLoadingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!mountedRef.current) return
 
-    if (totalAssets > 0 && loadedAssets === totalAssets) {
-      const timeElapsed = Date.now() - loadingStartTime
-      const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - timeElapsed)
+    const checkLoadingCompletion = () => {
+      if (totalAssets > 0 && loadedAssets === totalAssets) {
+        const timeElapsed = Date.now() - loadingStartTime
+        const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - timeElapsed)
 
-      console.log(`[AssetLoading] Loading complete:`, {
-        totalAssets,
-        loadedAssets,
-        timeElapsed,
-        remainingTime,
-        loadingStartTime,
-        currentTime: Date.now()
-      })
+        console.log(`[AssetLoading] Loading complete:`, {
+          totalAssets,
+          loadedAssets,
+          timeElapsed,
+          remainingTime,
+          loadingStartTime,
+          currentTime: Date.now()
+        })
 
-      // Clear any existing timer
-      if (initializationTimer.current) {
-        clearTimeout(initializationTimer.current)
-      }
-
-      // Add a delay to ensure minimum loading time and smooth transition
-      initializationTimer.current = setTimeout(() => {
-        if (mountedRef.current) {
-          console.log('[AssetLoading] Hiding loader after minimum time')
-          setIsLoading(false)
-        }
-      }, remainingTime)
-
-      return () => {
+        // Clear any existing timer
         if (initializationTimer.current) {
           clearTimeout(initializationTimer.current)
         }
+
+        // Add a delay to ensure minimum loading time and smooth transition
+        initializationTimer.current = setTimeout(() => {
+          if (mountedRef.current) {
+            console.log('[AssetLoading] Hiding loader after minimum time')
+            setIsLoading(false)
+          }
+        }, remainingTime)
       }
     }
-  }, [totalAssets, loadedAssets, loadingStartTime])
+
+    checkLoadingCompletion()
+
+    return () => {
+      if (initializationTimer.current) {
+        clearTimeout(initializationTimer.current)
+      }
+    }
+  }, [totalAssets, loadedAssets, loadingStartTime, isLoading])
 
   const registerAsset = useCallback(() => {
     if (!mountedRef.current) return

@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { useGalleryImages } from '@/hooks/useGalleryImages'
 import { FullscreenGallery } from './FullscreenGallery'
 import { useAssetLoading } from '@/contexts/AssetLoadingContext'
-import styles from '@/styles/TransitionGallery.module.css'
 import type { Property } from '@/types/property'
 
 const socialLinks = [

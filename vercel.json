@@ -1,27 +1,13 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
-  },
-  "github": {
-    "enabled": true,
-    "silent": false
-  },
+  "version": 2,
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
   "builds": [
     {
-      "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "zeroConfig": true,
-        "installCommand": "npm install --legacy-peer-deps"
-      }
+      "src": "next.config.js",
+      "use": "@vercel/next"
     }
-  ],
-  "build": {
-    "env": {
-      "NEXT_TELEMETRY_DISABLED": "1"
-    }
-  },
-  "crons": []
+  ]
 }
