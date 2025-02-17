@@ -1,12 +1,10 @@
 'use client'
 
-import { headers } from 'next/headers'
 import { Inter } from 'next/font/google'
-import { AssetLoadingProvider } from '@/contexts/AssetLoadingContext'
-import { LoadingScreen } from '@/components/shared/LoadingScreen'
-import './globals.css'
+import { headers } from 'next/headers'
 import { Metadata } from 'next'
-import Providers from '@/components/shared/Providers'
+import ClientLayout from '@/components/layouts/ClientLayout'
+import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,7 +21,7 @@ export const metadata: Metadata = {
     description: 'Discover amazing properties with our digital showcase platform.',
     images: [
       {
-        url: '/og-image.jpg', // This should be a public image in your project
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Digital Property Showcase',
@@ -59,11 +57,9 @@ export default function RootLayout({
         )}
       </head>
       <body className={inter.className}>
-        <AssetLoadingProvider>
-          <LoadingScreen />
+        <ClientLayout>
           {children}
-        </AssetLoadingProvider>
-        <Providers />
+        </ClientLayout>
       </body>
     </html>
   )

@@ -1,23 +1,19 @@
 'use client'
 
-import { BrandColorInitializer } from '@/components/BrandColorInitializer'
-import { BrandFontInitializer } from '@/components/BrandFontInitializer'
 import { AssetLoadingProvider } from '@/contexts/AssetLoadingContext'
-import LoadingScreen from '@/components/shared/LoadingScreen'
-import type { Property } from '@/types/property'
+import { LoadingScreen } from '@/components/shared/LoadingScreen'
+import Providers from '@/components/shared/Providers'
 
-interface ClientLayoutProps {
-  property: Property
+export default function ClientLayout({
+  children,
+}: {
   children: React.ReactNode
-}
-
-export function ClientLayout({ property, children }: ClientLayoutProps) {
+}) {
   return (
     <AssetLoadingProvider>
-      {property.is_demo && <LoadingScreen />}
-      <BrandColorInitializer property={property} />
-      <BrandFontInitializer property={property} />
+      <LoadingScreen />
       {children}
+      <Providers />
     </AssetLoadingProvider>
   )
 }
