@@ -26,7 +26,6 @@ declare global {
 export function Header({ property }: HeaderProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [logoLoaded, setLogoLoaded] = useState(false)
   const { logoUrl } = usePropertyLogo(property.id)
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
   const isCustomDomain = typeof window !== 'undefined' ? window.__CUSTOM_DOMAIN__ : false
@@ -88,7 +87,6 @@ export function Header({ property }: HeaderProps) {
                   priority
                   className="object-contain w-auto h-[44px]"
                   onLoad={() => {
-                    setLogoLoaded(true)
                     markAssetAsLoaded()
                   }}
                 />
