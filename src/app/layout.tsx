@@ -1,10 +1,9 @@
-import { Inter } from 'next/font/google'
+import "./globals.css"
 import { headers } from 'next/headers'
 import { Metadata } from 'next'
 import ClientLayout from '@/components/layouts/ClientLayout'
 import './globals.css'
-
-const inter = Inter({ subsets: ['latin'] })
+import Providers from '@/components/shared/Providers'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
@@ -19,7 +18,7 @@ export const metadata: Metadata = {
     description: 'Discover amazing properties with our digital showcase platform.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/og-image.jpg', // This should be a public image in your project
         width: 1200,
         height: 630,
         alt: 'Digital Property Showcase',
@@ -35,14 +34,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headersList = await headers()
-  const isCustomDomain = headersList.get('x-is-custom-domain') === 'true'
-
   return (
     <html lang="en">
       <head>
@@ -50,14 +46,10 @@ export default async function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
         <script src="//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" async></script>
-        {isCustomDomain && (
-          <meta name="is-custom-domain" content="true" />
-        )}
       </head>
-      <body className={inter.className}>
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+      <body>
+        {children}
+        <Providers />
       </body>
     </html>
   )
