@@ -55,46 +55,58 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
   const [copySuccess, setCopySuccess] = useState(false)
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
 
+  // Debug logging for component state
+  useEffect(() => {
+    console.log('[TransitionGallery] Component state:', {
+      inView,
+      imagesCount: images.length,
+      loadedImagesCount: loadedImages.size,
+      loading,
+      error
+    });
+  }, [inView, images.length, loadedImages.size, loading, error]);
+
   // Register gallery images as assets
   useEffect(() => {
     if (!loading && images.length > 0) {
-      console.log('[TransitionGallery] Registering gallery images:', images.length)
-      images.forEach(() => registerAsset())
+      console.log('[TransitionGallery] Registering gallery images:', images.length);
+      images.forEach(() => registerAsset());
     }
-  }, [loading, images, registerAsset])
+  }, [loading, images, registerAsset]);
 
-  // Handle image load
+  // Handle image load - now with debug logging
   const handleImageLoad = (imageId: string) => {
-    console.log('[TransitionGallery] Image loaded:', imageId)
-    setLoadedImages(prev => new Set([...prev, imageId]))
-    markAssetAsLoaded()
-  }
+    console.log('[TransitionGallery] Image loaded:', imageId);
+    setLoadedImages(prev => new Set([...prev, imageId]));
+    markAssetAsLoaded();
+  };
 
   // Scroll the gallery left or right
   const scroll = (direction: 'left' | 'right') => {
-    if (!scrollContainerRef.current) return
+    if (!scrollContainerRef.current) return;
 
-    const container = scrollContainerRef.current
-    const itemWidth = container.firstElementChild?.clientWidth || 0
-    const gap = 16 // gap-4 = 1rem = 16px
-    const scrollAmount = itemWidth + gap
+    const container = scrollContainerRef.current;
+    const itemWidth = container.firstElementChild?.clientWidth || 0;
+    const gap = 16; // gap-4 = 1rem = 16px
+    const scrollAmount = itemWidth + gap;
 
     let newScroll = direction === 'left'
       ? container.scrollLeft - scrollAmount
-      : container.scrollLeft + scrollAmount
+      : container.scrollLeft + scrollAmount;
 
     // Handle endless scrolling
     if (direction === 'left' && newScroll < 0) {
-      newScroll = container.scrollWidth - container.clientWidth
+      newScroll = container.scrollWidth - container.clientWidth;
     } else if (direction === 'right' && newScroll + container.clientWidth > container.scrollWidth) {
-      newScroll = 0
+      newScroll = 0;
     }
 
+    console.log('[TransitionGallery] Scrolling gallery:', { direction, newScroll });
     container.scrollTo({
       left: newScroll,
       behavior: 'smooth'
-    })
-  }
+    });
+  };
 
   const handleShare = (shareUrl: (url: string) => string, label: string) => {
     const url = window.location.href
@@ -116,17 +128,6 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
   const handleImageClick = (index: number) => {
     setSelectedImageIndex(index)
   }
-
-  // Add debugging logs
-  useEffect(() => {
-    console.log('[TransitionGallery] State:', {
-      loading,
-      imagesCount: images.length,
-      error,
-      inView,
-      loadedImagesCount: loadedImages.size
-    })
-  }, [loading, images, error, inView, loadedImages])
 
   if (loading) {
     return (
@@ -180,7 +181,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
                   opacity: inView ? 1 : 0,
                   transform: `translateY(${inView ? '0' : '40px'})`,
                   transition: 'all 800ms cubic-bezier(0.4, 0, 0.2, 1)',
-                  transitionDelay: `${index * 300}ms`,
+                  transitionDelay: `${Math.min(index * 300, 2000)}ms`, // Cap maximum delay at 2 seconds
                   willChange: 'transform, opacity'
                 }}
                 onClick={() => handleImageClick(index)}
