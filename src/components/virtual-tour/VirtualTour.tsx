@@ -1,18 +1,6 @@
 "use client";
 
-import {
-  Scene,
-  PerspectiveCamera,
-  WebGLRenderer,
-  ACESFilmicToneMapping,
-  SRGBColorSpace,
-  AmbientLight,
-  DirectionalLight,
-  EquirectangularReflectionMapping,
-  Color,
-  Box3,
-  Vector3
-} from 'three';
+import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
@@ -25,9 +13,9 @@ interface VirtualTourProps {
 
 export default function VirtualTour({ modelPath, className = "" }: VirtualTourProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const rendererRef = useRef<WebGLRenderer | null>(null);
-  const sceneRef = useRef<Scene | null>(null);
-  const cameraRef = useRef<PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
@@ -37,11 +25,11 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     const container = containerRef.current;
 
     // Scene setup
-    const scene = new Scene();
+    const scene = new THREE.Scene();
     sceneRef.current = scene;
 
     // Camera setup
-    const camera = new PerspectiveCamera(
+    const camera = new THREE.PerspectiveCamera(
       90,
       container.clientWidth / container.clientHeight,
       0.001,
@@ -51,15 +39,15 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     cameraRef.current = camera;
 
     // Renderer setup
-    const renderer = new WebGLRenderer({ 
+    const renderer = new THREE.WebGLRenderer({ 
       antialias: true,
       alpha: true
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.8;
-    renderer.outputColorSpace = SRGBColorSpace;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -74,14 +62,14 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     controlsRef.current = controls;
 
     // Lighting setup
-    const ambientLight = new AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
-    const directionalLight = new DirectionalLight(0xffffff, 1.2);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(5, 8, 5);
     scene.add(directionalLight);
 
-    const fillLight = new DirectionalLight(0xffffff, 0.5);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
     fillLight.position.set(-5, 3, -5);
     scene.add(fillLight);
 
@@ -89,9 +77,9 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
     new RGBELoader()
       .setPath('/envmaps/')
       .load('royal_esplanade_1k.hdr', (texture) => {
-        texture.mapping = EquirectangularReflectionMapping;
+        texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
-        scene.background = new Color(0xffffff);
+        scene.background = new THREE.Color(0xffffff);
       });
 
     // Clear any existing content
@@ -110,14 +98,14 @@ export default function VirtualTour({ modelPath, className = "" }: VirtualTourPr
       modelPath,
       (gltf) => {
         // Center model
-        const box = new Box3().setFromObject(gltf.scene);
-        const center = box.getCenter(new Vector3());
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const center = box.getCenter(new THREE.Vector3());
         gltf.scene.position.x -= center.x;
         gltf.scene.position.y -= center.y;
         gltf.scene.position.z -= center.z;
 
         // Scale model to reasonable size
-        const size = box.getSize(new Vector3());
+        const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
         const scale = 20 / maxDim;
         gltf.scene.scale.setScalar(scale);

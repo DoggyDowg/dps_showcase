@@ -16,7 +16,7 @@ export default function ClientLayout({
 }: ClientLayoutProps) {
   return (
     <AssetLoadingProvider>
-      <LoadingScreen />
+      <LoadingScreen property={property} />
       {children}
       <Providers />
     </AssetLoadingProvider>
