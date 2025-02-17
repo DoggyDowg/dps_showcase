@@ -11,7 +11,7 @@ interface ClientLayoutProps {
   children: React.ReactNode
 }
 
-export function ClientLayout({ property, children }: ClientLayoutProps) {
+export default function ClientLayout({ property, children }: ClientLayoutProps) {
   console.log('[ClientLayout] Property data:', {
     id: property.id,
     is_demo: property.is_demo,
