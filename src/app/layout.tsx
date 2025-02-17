@@ -35,12 +35,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headersList = headers()
+  const headersList = await headers()
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true'
 
   return (

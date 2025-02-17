@@ -1,7 +1,7 @@
 'use client'
 
 import { AssetLoadingProvider } from '@/contexts/AssetLoadingContext'
-import { LoadingScreen } from '@/components/shared/LoadingScreen'
+import LoadingScreen from '@/components/shared/LoadingScreen'
 import Providers from '@/components/shared/Providers'
 
 export default function ClientLayout({
