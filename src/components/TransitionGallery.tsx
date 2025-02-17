@@ -52,6 +52,7 @@ export function TransitionGallery({ property }: TransitionGalleryProps) {
   const { images, loading, error } = useGalleryImages(property.id, property.is_demo)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const [copySuccess, setCopySuccess] = useState(false)
   const { registerAsset, markAssetAsLoaded } = useAssetLoading()
 
   // Register gallery images as assets
