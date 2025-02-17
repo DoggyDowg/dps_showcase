@@ -107,7 +107,7 @@ export function ParallaxBanner({ imageSrc, title, loading = false }: ParallaxBan
       )}
       {/* Content */}
       <div className="relative h-full max-w-7xl mx-auto px-4 flex items-center justify-center">
-        <h2 className="text-4xl sm:text-5xl md:text-6xl font-light text-brand-light tracking-wider">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-light text-brand-light tracking-wider">
           {title}
         </h2>
       </div>

@@ -1,68 +1,64 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useGoogleMaps } from '@/components/shared/GoogleMapsLoader'
-import { getLandmarks } from '@/utils/landmarkUtils'
-import { useAssetLoading } from '@/contexts/AssetLoadingContext'
+import { useEffect, useState, useRef } from 'react'
+import { ParallaxBanner } from './shared/ParallaxBanner'
 import { GoogleMap } from '@/components/shared/GoogleMap'
-import type { Property } from '@/types/property'
-import type { Property as MapProperty, Landmark } from '@/types/maps'
+import { getLandmarks } from '@/utils/landmarkUtils'
+import { useGoogleMaps } from '@/components/shared/GoogleMapsLoader'
+import { useNeighbourhoodBanner } from '@/hooks/useNeighbourhoodBanner'
+import { useNeighbourhoodImages } from '@/hooks/useNeighbourhoodImages'
+import { DynamicImage } from './shared/DynamicImage'
+import type { Landmark } from '@/types/maps'
+import type { Property as DBProperty } from '@/types/property'
+import type { Property as MapProperty } from '@/types/maps'
+import { AerialGallery } from './AerialGallery'
 
 interface YourNeighbourhoodProps {
-  property: Property
+  property: DBProperty
 }
 
 export function YourNeighbourhood({ property }: YourNeighbourhoodProps) {
   const { isLoaded } = useGoogleMaps()
+  const { imageUrl, loading } = useNeighbourhoodBanner(property.id, property.is_demo)
+  const { images: neighbourhoodImages, loading: imagesLoading } = useNeighbourhoodImages(property.id, property.is_demo)
+  const bannerTitle = property.content?.neighbourhood?.banner_title || 'YOUR NEIGHBOURHOOD'
+  
+  // Map state
   const [landmarks, setLandmarks] = useState<Landmark[]>([])
-  const [mapProperty, setMapProperty] = useState<MapProperty | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [mapProperty, setMapProperty] = useState<MapProperty | null>(null)
+
+  // Animation states
   const [isVisibleRow1, setIsVisibleRow1] = useState(false)
   const [isVisibleRow2, setIsVisibleRow2] = useState(false)
   const [isVisibleRow3, setIsVisibleRow3] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const row1Ref = useRef<HTMLDivElement>(null)
   const row2Ref = useRef<HTMLDivElement>(null)
   const row3Ref = useRef<HTMLDivElement>(null)
-  const { registerAsset, markAssetAsLoaded } = useAssetLoading()
-  const observerRef = useRef<IntersectionObserver | null>(null)
 
-  // Initialize when map is loaded
+  // Set up initialization effect
   useEffect(() => {
-    if (isLoaded) {
-      console.log('[YourNeighbourhood] Map loaded, initializing')
+    if (!loading && !imagesLoading && property) {
       setIsInitialized(true)
-      registerAsset() // Register the map as an asset
     }
-  }, [isLoaded, registerAsset])
+  }, [loading, imagesLoading, property])
 
-  // Set up intersection observers
+  // Animation observers - only set up after initialization
   useEffect(() => {
-    if (!isInitialized) {
-      console.log('[YourNeighbourhood] Not initialized yet, skipping observer setup')
-      return
-    }
+    if (!isInitialized) return
 
-    // Clean up previous observer
-    if (observerRef.current) {
-      observerRef.current.disconnect()
-    }
-
-    // Create new observer
-    observerRef.current = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             if (entry.target === row1Ref.current) {
-              console.log('[YourNeighbourhood] Row 1 in view')
               setIsVisibleRow1(true)
             }
             if (entry.target === row2Ref.current) {
-              console.log('[YourNeighbourhood] Row 2 in view')
               setIsVisibleRow2(true)
             }
             if (entry.target === row3Ref.current) {
-              console.log('[YourNeighbourhood] Row 3 in view')
               setIsVisibleRow3(true)
             }
           }
@@ -70,30 +66,21 @@ export function YourNeighbourhood({ property }: YourNeighbourhoodProps) {
       },
       { 
         threshold: 0.1,
-        rootMargin: '100px'
+        rootMargin: '100px',
       }
     )
 
-    // Observe elements
-    if (row1Ref.current) observerRef.current.observe(row1Ref.current)
-    if (row2Ref.current) observerRef.current.observe(row2Ref.current)
-    if (row3Ref.current) observerRef.current.observe(row3Ref.current)
+    if (row1Ref.current) observer.observe(row1Ref.current)
+    if (row2Ref.current) observer.observe(row2Ref.current)
+    if (row3Ref.current) observer.observe(row3Ref.current)
 
-    // Cleanup
-    return () => {
-      console.log('[YourNeighbourhood] Cleaning up observers')
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-        observerRef.current = null
-      }
-    }
+    return () => observer.disconnect()
   }, [isInitialized])
 
   // Load landmarks data
   useEffect(() => {
     async function loadLandmarks() {
       try {
-        console.log('[YourNeighbourhood] Loading landmarks')
         const data = await getLandmarks()
         setLandmarks(data.landmarks)
         setMapProperty({
@@ -103,18 +90,14 @@ export function YourNeighbourhood({ property }: YourNeighbourhoodProps) {
           id: property.id,
           is_demo: property.is_demo
         })
-        console.log('[YourNeighbourhood] Landmarks loaded')
-        markAssetAsLoaded() // Mark the map as loaded
       } catch (err) {
-        console.error('[YourNeighbourhood] Error loading landmarks:', err)
+        console.error('Error loading landmarks:', err)
         setError('Failed to load neighbourhood data')
       }
     }
 
-    if (isInitialized) {
-      loadLandmarks()
-    }
-  }, [property, isInitialized, markAssetAsLoaded])
+    loadLandmarks()
+  }, [property])
 
   if (error) {
     return (
@@ -124,101 +107,128 @@ export function YourNeighbourhood({ property }: YourNeighbourhoodProps) {
     )
   }
 
-  const { content } = property
-  const neighbourhoodContent = content.neighbourhood
-
   return (
-    <div className="bg-brand-light">
-      {/* Map Section */}
-      <section className="h-[600px] relative">
-        {isLoaded && mapProperty ? (
-          <div className="absolute inset-0">
-            <GoogleMap
-              center={mapProperty.position}
-              zoom={15}
-              property={mapProperty}
-              landmarks={landmarks}
-              mode="view"
-            />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
-        )}
-      </section>
+    <section className="relative">
+      <div id="neighbourhood">
+        <ParallaxBanner
+          imageSrc={imageUrl || '/images/banners/yourneighbourhood.jpg'}
+          title={bannerTitle}
+          loading={loading}
+        />
+      </div>
 
-      {/* Content Section */}
-      <section className="py-16 md:py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-light text-brand-dark mb-6">
-              {neighbourhoodContent.text || "Discover Your Neighbourhood"}
-            </h2>
-          </div>
-
+      {/* Content Rows */}
+      <div className="bg-brand-light pt-20 pb-20">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           {/* Row 1 */}
           <div 
-            ref={row1Ref}
-            className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24"
-            style={{
-              opacity: isVisibleRow1 ? 1 : 0,
-              transform: `translateY(${isVisibleRow1 ? '0' : '40px'})`,
-              transition: 'all 800ms cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
+            ref={row1Ref} 
+            className="grid md:grid-cols-2 gap-12 items-center mb-20"
           >
-            <div>
-              <h3 className="text-3xl font-light text-brand-dark mb-4">
-                {neighbourhoodContent.part1_headline || "Location & Accessibility"}
-              </h3>
-              <p className="text-lg text-brand-dark/80">
-                {neighbourhoodContent.part1_text || "Experience the perfect blend of urban convenience and suburban tranquility."}
-              </p>
+            <div 
+              className={`relative h-[400px] transition-all duration-1000 ease-out ${
+                isVisibleRow1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              {neighbourhoodImages[0] && (
+                <DynamicImage
+                  src={neighbourhoodImages[0].src}
+                  alt={neighbourhoodImages[0].alt}
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              )}
             </div>
-            <div className="h-[300px] bg-gray-200 rounded-lg" />
+            <div 
+              className={`prose prose-lg max-w-none transition-all duration-1000 ease-out delay-500 text-center ${
+                isVisibleRow1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              <h3 className="text-3xl font-light mb-4 text-brand-dark">{property.content?.neighbourhood?.part1_headline}</h3>
+              <p className="text-brand-dark">{property.content?.neighbourhood?.part1_text}</p>
+            </div>
           </div>
 
           {/* Row 2 */}
           <div 
-            ref={row2Ref}
-            className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24"
-            style={{
-              opacity: isVisibleRow2 ? 1 : 0,
-              transform: `translateY(${isVisibleRow2 ? '0' : '40px'})`,
-              transition: 'all 800ms cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
+            ref={row2Ref} 
+            className="grid md:grid-cols-2 gap-12 items-center mb-20"
           >
-            <div className="md:order-2">
-              <h3 className="text-3xl font-light text-brand-dark mb-4">
-                {neighbourhoodContent.part2_headline || "Lifestyle & Culture"}
-              </h3>
-              <p className="text-lg text-brand-dark/80">
-                {neighbourhoodContent.part2_text || "Immerse yourself in a vibrant community with endless possibilities."}
-              </p>
+            <div 
+              className={`prose prose-lg max-w-none transition-all duration-1000 ease-out order-2 md:order-1 text-center ${
+                isVisibleRow2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              <h3 className="text-3xl font-light mb-4 text-brand-dark">{property.content?.neighbourhood?.part2_headline}</h3>
+              <p className="text-brand-dark">{property.content?.neighbourhood?.part2_text}</p>
             </div>
-            <div className="h-[300px] bg-gray-200 rounded-lg md:order-1" />
+            <div 
+              className={`relative h-[400px] transition-all duration-1000 ease-out delay-500 order-1 md:order-2 ${
+                isVisibleRow2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              {neighbourhoodImages[1] && (
+                <DynamicImage
+                  src={neighbourhoodImages[1].src}
+                  alt={neighbourhoodImages[1].alt}
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              )}
+            </div>
           </div>
 
           {/* Row 3 */}
           <div 
-            ref={row3Ref}
-            className="grid grid-cols-1 md:grid-cols-2 gap-12"
-            style={{
-              opacity: isVisibleRow3 ? 1 : 0,
-              transform: `translateY(${isVisibleRow3 ? '0' : '40px'})`,
-              transition: 'all 800ms cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
+            ref={row3Ref} 
+            className="grid md:grid-cols-2 gap-12 items-center mb-20"
           >
-            <div>
-              <h3 className="text-3xl font-light text-brand-dark mb-4">
-                {neighbourhoodContent.part3_headline || "Local Amenities"}
-              </h3>
-              <p className="text-lg text-brand-dark/80">
-                {neighbourhoodContent.part3_text || "Everything you need is just moments away."}
-              </p>
+            <div 
+              className={`relative h-[400px] transition-all duration-1000 ease-out ${
+                isVisibleRow3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              {neighbourhoodImages[2] && (
+                <DynamicImage
+                  src={neighbourhoodImages[2].src}
+                  alt={neighbourhoodImages[2].alt}
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              )}
             </div>
-            <div className="h-[300px] bg-gray-200 rounded-lg" />
+            <div 
+              className={`prose prose-lg max-w-none transition-all duration-1000 ease-out delay-500 text-center ${
+                isVisibleRow3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              <h3 className="text-3xl font-light mb-4 text-brand-dark">{property.content?.neighbourhood?.part3_headline}</h3>
+              <p className="text-brand-dark">{property.content?.neighbourhood?.part3_text}</p>
+            </div>
           </div>
+
+          {/* Map Section */}
+          <section className="bg-brand-light py-20">
+            <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+              <div className="h-[600px] rounded-lg overflow-hidden shadow-lg mb-8">
+                {isLoaded && mapProperty && (
+                  <GoogleMap 
+                    property={mapProperty} 
+                    landmarks={landmarks}
+                    center={mapProperty.position}
+                  />
+                )}
+              </div>
+
+              {/* Aerial Gallery */}
+              <div className="mt-12 text-center">
+                <h4 className="text-2xl font-light mb-6 text-brand-dark text-center">Aerial Views</h4>
+                <AerialGallery property={property} />
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   )
 }
