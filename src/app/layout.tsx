@@ -1,8 +1,5 @@
-import "./globals.css"
-import { headers } from 'next/headers'
-import { Metadata } from 'next'
-import ClientLayout from '@/components/layouts/ClientLayout'
 import './globals.css'
+import { Metadata } from 'next'
 import Providers from '@/components/shared/Providers'
 
 export const metadata: Metadata = {
@@ -18,7 +15,7 @@ export const metadata: Metadata = {
     description: 'Discover amazing properties with our digital showcase platform.',
     images: [
       {
-        url: '/og-image.jpg', // This should be a public image in your project
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Digital Property Showcase',
